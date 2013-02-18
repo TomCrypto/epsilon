@@ -7,7 +7,7 @@ OBJECTS = $(subst cpp,o,$(subst src/,obj/,$(shell find src/ -name '*.cpp')))
 HEADERS = $(shell find include/ -name '*.hpp')
 
 CPPFLAGS = -O2 -std=c++11 -march=native
-LDLIBS = -lOpenCL
+LDLIBS = -lOpenCL -lncurses
 
 $(EXECUTABLE): $(OBJECTS) 
 	@mkdir -p bin/
