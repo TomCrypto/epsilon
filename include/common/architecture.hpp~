@@ -1,0 +1,69 @@
+#pragma once
+
+#include <common/common.hpp>
+
+/** @file architecture.hpp
+  * @brief Engine architecture definitions.
+  *
+  * This file contains, in particular, the shared kernel object interface which
+  * permits the engine to uniformly handle kernel arguments, requiring only
+  * kernel-side code modifications.
+**/
+
+/** @class KernelObject
+  * @brief Provides a uniform interface for kernel arguments.
+  * 
+  * Each kernel object manages its own memory (both host-side and device-side)
+  * and binds itself to a particular kernel argument slot, provided by the
+  * engine. Inputs to kernel objects come in two forms:
+  * - Scene data, where the kernel object requests the contents of a particular
+  *   file located inside the selected scene's directory (such as geometry data
+  *   or material definitions). The object loads this data itself.
+  * - Engine parameters, which are always passed to the kernel object even if
+  *   not specifically required. This contains parameters selected by the user
+  *   at runtime, such as render width and height, or quality (samples/pixel).
+  *
+  * A kernel object can be passive, meaning it is responsible for storing data
+  * and uploading it to the device once, or it can be active, meaning it will
+  * be able to update itself and upload new data to the device as needed.
+**/
+class KernelObject
+{
+    private:
+        /** @brief Loads scene data based on an identifier.
+          * @param id The identifier of the scene data to load.
+          * @param params The engine parameters which were given.
+          * @param data A streamable object containing the scene data.
+          * @note If the scene data cannot be found, this will throw an
+          *       exception, and the kernel object should probably die
+          *       and cause the engine to fail if it cannot recover.
+        **/
+        void GetData(std::string id, const EngineParams& params,
+                     std::ifstream& data) = 0;
+
+    public:
+        /** @brief Returns whether the kernel object is active.
+          * @return If this returns \c true, then the kernel object's \c Update
+          *         method will be called before each kernel invocation.
+        **/
+        virtual bool IsActive() = 0;
+
+        /** @brief Initializes the kernel object.
+          * @param params The engine parameters.
+        **/
+        virtual void Initialize(const EngineParams& params) = 0;
+
+        /** @brief Binds the kernel object to a kernel.
+          * @param kernel The OpenCL kernel to bind to.
+          * @param slot The argument slot to bind to.
+        **/
+        virtual void BindTo(cl::Kernel kernel, cl_uint slot) = 0;
+
+        /** @brief Updates the kernel object.
+          * @param params The engine parameters.
+          * @param index This indicates how many previous kernel invocations
+          *              have occurred (e.g. if this contains 3, then this
+          *              method has already been called three times).
+        **/
+        virtual void Update(const EngineParams& params, size_t index) = 0;
+}

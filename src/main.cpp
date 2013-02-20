@@ -60,29 +60,27 @@ int main(int argc, char* argv[])
 		interface = new Interface();
 		interface->GetInput();
 
-		cl_device_id device = interface->deviceList.platforms[interface->platform].devices[interface->device].ptr;
-		Epsilon engine = Epsilon(device);
+		DeviceList list;
+		list.Initialize();
+
+		cl_device_id device = list.platforms[0].devices[0].ptr;
+		fprintf(stderr, "Start\n");
+		Epsilon engine = Epsilon(interface->width, interface->height, interface->samples,
+								 interface->platform, interface->device, interface->source, interface->output);
+		fprintf(stderr, "End\n");
 
 		/* Create context, queue, etc.. */
-		cl_context context = clCreateContext(0, 1, &device, 0, 0, 0);
-		if (context == 0)
-		{
-			throw std::runtime_error("Failed to create context.");
-		}
+		cl_int error = 0;
+		cl_context context = clCreateContext(0, 1, &device, 0, 0, &error);
+		Error::Check(Error::Context, error);
 
-		cl_command_queue queue = clCreateCommandQueue(context, device, 0, 0);
-		if (queue == 0)
-		{
-		    throw std::runtime_error("Failed to create command queue.");
-		}
+		cl_command_queue queue = clCreateCommandQueue(context, device, 0, &error);
+		Error::Check(Error::Queue, error);
 
 		/* Get the local work group size for this device. */
 		size_t localGroupSize;
-		cl_int error = clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(localGroupSize), &localGroupSize, 0);
-		if (error != CL_SUCCESS)
-		{
-			throw std::runtime_error("Failed to acquire local work group size.");
-		}
+		error = clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(localGroupSize), &localGroupSize, 0);
+		Error::Check(Error::DeviceInfo, error);
 
 		cl_float3  test = {1.0, 2.0, 3.0};
 
@@ -104,17 +102,11 @@ int main(int argc, char* argv[])
 		cl_ulong bufferSize = sizeof(float) * 4 * width * height;
 
 		/* And a small buffer, for the seed (beta * w bits long). */
-		cl_mem seed = clCreateBuffer(context, CL_MEM_READ_ONLY, 8 * 4, 0, 0);
-		if (seed == 0)
-		{
-			throw std::runtime_error("Failed to allocate device buffer.");
-		}
+		cl_mem seed = clCreateBuffer(context, CL_MEM_READ_ONLY, 8 * 4, 0, &error);
+		Error::Check(Error::Memory, error);
 
-		cl_mem scene = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(sceneData), 0, 0);
-		if (scene == 0)
-		{
-		    throw std::runtime_error("Failed to allocate device buffer.");
-		}
+		cl_mem scene = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(sceneData), 0, &error);
+		Error::Check(Error::Memory, error);
 
 		//cl_mem camBuf = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(cl_camera), 0, 0);
 
@@ -274,21 +266,14 @@ int main(int argc, char* argv[])
 
 		/* Attempt to create this program. */
 		cl_program program = GetProgram(context, "cl/epsilon.cl");
-		if (program == 0)
-		{
-			throw std::runtime_error("Failed to create program.");
-		}
 
 		/* Attempt to build the program. */
 		error = clBuildProgram(program, 0, 0, "-I cl/", 0, 0);
-		if (error != CL_SUCCESS)
-		{
-		    /* Failed to build program. */
-			throw std::runtime_error("Failed to build program.");
-		}
+		Error::Check(Error::Build, error);
 
 		/* And create the kernel (finally) */
-		cl_kernel kernel = clCreateKernel(program, "clmain", 0);
+		cl_kernel kernel = clCreateKernel(program, "clmain", &error);
+		Error::Check(Error::Kernel, error);
 		if (kernel == 0)
 		{
 			throw std::runtime_error("Failed to create OpenCL kernel.");
@@ -330,10 +315,7 @@ int main(int argc, char* argv[])
 		prng.Bind(kernel, 3);
 
 		error = clSetKernelArg(kernel, 5, sizeof(scene), &scene);
-		if (error != CL_SUCCESS)
-		{
-			throw std::runtime_error("Failed to set kernel argument.");
-		}
+		Error::Check(Error::Bind, error);
 
 		error = clSetKernelArg(kernel, 1, sizeof(geometry), &geometry);
 		//error = clSetKernelArg(kernel, 6, sizeof(camBuf), &camBuf);
@@ -353,10 +335,7 @@ int main(int argc, char* argv[])
 
 			/* Generate one more batch of results. */
 			error = clEnqueueNDRangeKernel(queue, kernel, 1, 0, &pixelCount, &localGroupSize, 0, 0, 0);
-			if (error != CL_SUCCESS)
-			{
-				throw std::runtime_error("Failed to execute kernel.");
-			}
+			Error::Check(Error::Execute, error);
 
 		    prng.Renew(queue);
 			clFinish(queue);
@@ -370,7 +349,7 @@ int main(int argc, char* argv[])
 		render.ConvertToRGB();
 		render.Tonemap();
 		render.GammaCorrect();
-		render.WriteToFile(interface->outputFile);
+		render.WriteToFile(interface->output);
 
 		/* Clean up everything. */
 		clReleaseKernel(kernel);

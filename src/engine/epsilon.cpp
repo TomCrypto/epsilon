@@ -1,53 +1,42 @@
 #include <engine/epsilon.hpp>
 
-using namespace std;
-
-Epsilon::Epsilon(cl_device_id device)
+Epsilon::Epsilon(size_t width, size_t height, size_t samples,
+                 cl::Platform platform, cl::Device device,
+                 std::string source, std::string output)
 {
-    /* Save the device! */
-    this->device = device;
-    cl_int error = 0;
+    /* This will remain constant. */
+    this->params.platform = platform;
+    this->params.device   = device;
+    this->params.source   = source;
+    this->params.output   = output;
+    this->params.width    = width;
+    this->params.height   = height;
+    this->params.samples  = samples;
 
-    /* Create the OpenCL context. */
-    context = clCreateContext(0, 1, &device, 0, 0, &error);
-    if (context == 0) throw runtime_error(Error(E_CTX, error));
+    std::vector<cl::Device> devices;
+    devices.push_back(device);
 
-    /* Now, create the command queue. */
-    queue = clCreateCommandQueue(context, device, 0, &error);
-    if (queue == 0) throw runtime_error(Error(E_QUEUE, error));
+    cl_int error;
+    this->params.context = cl::Context(devices,
+                                       nullptr, nullptr, nullptr, &error);
+    Error::Check(Error::Context, error);
 
-    /* Acquire the local work group size for the device. */
-    error = clGetDeviceInfo(device, CL_DEVICE_MAX_WORK_GROUP_SIZE,
-                            sizeof(size_t), &localGroupSize, 0);
-    if (error != CL_SUCCESS) throw runtime_error(Error(E_INFO, error));
+    this->params.queue = cl::CommandQueue(this->params.context, device,
+                                          0, &error);
+    Error::Check(Error::Queue, error);
 
-    /* Now, prepare to load the OpenCL program. */
-    char* source = (char*)("#include <cl/epsilon.cl>");
-    program = clCreateProgramWithSource(context, 1, (const char**)&source,
-                                        0, 0);
-    if (program == 0) throw runtime_error(Error(E_PROG, error));
+    std::string src = "#include <cl/epsilon.cl>";
+    cl::Program::Sources sourceCode = cl::Program::Sources(1, std::make_pair(
+                                      src.c_str(), src.length() + 1));
 
-    /* Try and build the program. */
-    error = clBuildProgram(program, 0, 0, "-I cl/", 0, 0);
-    if (error != CL_SUCCESS)
-    {
-        size_t logSize;
-        clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 
-                              0, 0, &logSize);
+    this->params.program = cl::Program(this->params.context, sourceCode,
+                                       &error);
+    Error::Check(Error::Program, error);
 
-        char *log = (char*)malloc(logSize + 1);
-        clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG,
-                              logSize + 1, log, 0);
+    error = this->params.program.build(devices, "-I cl/");
+    // write compilation log here
+    Error::Check(Error::Build, error);
 
-        ofstream logFile;
-        logFile.open("cl_log");
-        logFile << log;
-        logFile.close();
-
-        throw runtime_error(Error(E_BUILD, error));
-    }
-
-    /* Now, create the kernel. */
-    kernel = clCreateKernel(program, "clmain", 0);
-    if (kernel == 0) throw runtime_error(Error(E_KER, error));
+    this->params.kernel = cl::Kernel(this->params.program, "clmain", &error);
+    Error::Check(Error::Kernel, error);
 }

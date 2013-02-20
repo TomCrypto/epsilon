@@ -28,26 +28,22 @@ Camera::Camera(const Vector& pos, const Vector& dir, const float FOV,
     cl_int error;
     this->buffer = clCreateBuffer(context, CL_MEM_READ_ONLY,
                                   sizeof(cl_camera), 0, &error);
-    if (!this->buffer)
-    {
-        throw std::runtime_error(Error(E_BUF, error));
-    }
+    Error::Check(Error::Memory, error);
 
     cl_camera data;
     this->CL(&data);
     error = clEnqueueWriteBuffer(queue, this->buffer, CL_TRUE, 0,
                                         sizeof(cl_camera), &data, 0, 0, 0);
 
-    if (error != CL_SUCCESS)
-    {
-        throw std::runtime_error(Error(E_WRITE, error));
-    }
+    Error::Check(Error::CLIO, error);
 }
 
 void Camera::Bind(cl_kernel kernel, cl_uint index)
 {
     cl_int error = clSetKernelArg(kernel, index, sizeof(this->buffer),
                                   &this->buffer);
+
+	Error::Check(Error::Bind, error);
 }
 
 void Camera::CL(cl_camera *out)

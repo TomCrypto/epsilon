@@ -6,17 +6,19 @@ OBJECTS = $(subst cpp,o,$(subst src/,obj/,$(shell find src/ -name '*.cpp')))
 
 HEADERS = $(shell find include/ -name '*.hpp')
 
-CPPFLAGS = -O2 -std=c++11 -march=native
+           # The OpenCL C++ wrapper isn't fully 1.2 yet
+CPPFLAGS = -DCL_USE_DEPRECATED_OPENCL_1_1_APIS -Wno-cpp \
+           -O2 -std=c++11 -march=native \
+           -Wall -Wextra
+
 LDLIBS = -lOpenCL -lncurses
 
 $(EXECUTABLE): $(OBJECTS) 
 	@mkdir -p bin/
-	@echo Linking $(EXECUTABLE)...
 	@$(CXX) $(OBJECTS) -o $(addprefix bin/, $(EXECUTABLE)) $(LDLIBS)
 
 $(OBJECTS): obj/%.o : src/%.cpp $(HEADERS)
 	@mkdir -p $(@D)
-	@echo Building $@ from $<...
 	@$(CXX) $(CPPFLAGS) $(INCLUDE) -c $< -o $@
 
 clean:

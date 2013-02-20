@@ -15,7 +15,7 @@ RenderBuffer::RenderBuffer(cl_context context, size_t width, size_t height)
                                   CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
                                   this->size, this->pixels, &error);
     
-    if (this->buffer == nullptr) throw std::runtime_error(Error(E_BUF, error));
+	Error::Check(Error::Memory, error);
 }
 
 RenderBuffer::~RenderBuffer()
@@ -29,7 +29,7 @@ void RenderBuffer::Bind(cl_kernel kernel, cl_uint index)
     cl_int error = clSetKernelArg(kernel, index, sizeof(this->buffer),
                                   &this->buffer);
 
-    if (error != CL_SUCCESS) throw std::runtime_error(Error(E_BIND, error));
+	Error::Check(Error::Bind, error);
 }
 
 void RenderBuffer::Acquire(cl_command_queue queue, cl_bool block)
@@ -37,7 +37,7 @@ void RenderBuffer::Acquire(cl_command_queue queue, cl_bool block)
     cl_int error = clEnqueueReadBuffer(queue, this->buffer, block, 0,
                                        this->size, this->pixels, 0, 0, 0);
 
-    if (error != CL_SUCCESS) throw std::runtime_error(Error(E_READ, error));
+	Error::Check(Error::CLIO, error);
 }
 
 void RenderBuffer::Upload(cl_command_queue queue, cl_bool block)
@@ -45,7 +45,7 @@ void RenderBuffer::Upload(cl_command_queue queue, cl_bool block)
     cl_int error = clEnqueueWriteBuffer(queue, this->buffer, block, 0,
                                         this->size, this->pixels, 0, 0, 0);
 
-    if (error != CL_SUCCESS) throw std::runtime_error(Error(E_WRITE, error));
+	Error::Check(Error::CLIO, error);
 }
 
 void RenderBuffer::ConvertToRGB()

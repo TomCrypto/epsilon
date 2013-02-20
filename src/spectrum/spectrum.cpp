@@ -56,14 +56,14 @@ XYZCurve::XYZCurve(cl_context context, cl_command_queue queue)
     this->curve = clCreateImage(context, CL_MEM_READ_ONLY, &format, &desc,
                                 nullptr, &error);
 
-    if (this->curve == nullptr) throw std::runtime_error(Error(E_BUF, error));
+	Error::Check(Error::Memory, error);
 
     size_t origin[3] = { 0, 0, 0 };
     size_t region[3] = { SAMPLES, 1, 1 };
     error = clEnqueueWriteImage(queue, this->curve, CL_TRUE, origin, region,
                                 0, 0, ColorMatchingCurve, 0, 0, 0);
 
-   if (error != CL_SUCCESS) throw std::runtime_error(Error(E_WRITE, error));
+	Error::Check(Error::CLIO, error);
 }
 
 void XYZCurve::Bind(cl_kernel kernel, cl_uint index)
@@ -71,7 +71,7 @@ void XYZCurve::Bind(cl_kernel kernel, cl_uint index)
     cl_int error = clSetKernelArg(kernel, index, sizeof(this->curve),
                                   &this->curve);
 
-    if (error != CL_SUCCESS) throw std::runtime_error(Error(E_BIND, error));
+    Error::Check(Error::Bind, error);
 }
 
 XYZCurve::~XYZCurve()

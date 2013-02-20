@@ -34,7 +34,7 @@ Interface::Interface()
         init_pair(COLOR_TITLE1, COLOR_GREEN, COLOR_BLACK);
         init_pair(COLOR_TITLE2, COLOR_CYAN,  COLOR_BLACK);
         init_pair(COLOR_ERROR,  COLOR_RED,   COLOR_BLACK);
-        init_pair(COLOR_STATUS, COLOR_YELLOW, COLOR_BLACK);
+        init_pair(COLOR_STATUS, COLOR_GREEN, COLOR_BLACK);
     }
 
 }
@@ -65,6 +65,12 @@ void Interface::DisplayStatus(std::string message, bool error)
     else { attron(COLOR_PAIR(COLOR_STATUS)); attroff(A_BOLD); }
 
     WriteLine(LINE_STATUS, message);
+
+	if (error)
+	{
+		curs_set(0);
+	    noecho();
+	}
 }
 
 /* Draws the constant elements of the interface once and for all. This includes
@@ -113,17 +119,39 @@ void Interface::DrawFrame()
 
     /* Write all labels in their correct places. */
     attron(COLOR_PAIR(COLOR_NORMAL)); attron(A_BOLD);
-    mvprintw(LINE_PLATFORM  , 2, "OpenCL Platfm");
+    mvprintw(LINE_PLATFORM  , 2, "Host Platform");
     mvprintw(LINE_DEVICE    , 2, "OpenCL Device");
-    mvprintw(LINE_SCENEFILE , 2, "   Scene File");
-    mvprintw(LINE_OUTPUTFILE, 2, "  Output File");
-    mvprintw(LINE_WIDTH     , 2, " Render Width");
+    mvprintw(LINE_SCENEFILE , 2, "Engine Source");
+    mvprintw(LINE_OUTPUTFILE, 2, "Engine Output");
+    mvprintw(LINE_WIDTH     , 2, "Render  Width");
     mvprintw(LINE_HEIGHT    , 2, "Render Height");
     mvprintw(LINE_SAMPLES   , 2, "Samples/Pixel");
-    mvprintw(LINE_STATUS    , 2, "Render Status");
+    mvprintw(LINE_STATUS    , 2, "Engine Status");
     mvprintw(LINE_ETC       , 2, "Completion In");
-    mvprintw(LINE_PROGRESS  , 2, "Avg. Progress");
-    mvprintw(LINE_STATISTICS, 2, "   Statistics");
+    mvprintw(LINE_PROGRESS  , 2, "Cur. Progress");
+    mvprintw(LINE_STATISTICS, 2, "Engine Stats.");
+}
+
+#include <algorithm> 
+#include <functional> 
+#include <cctype>
+#include <locale>
+
+// trim from start
+static inline std::string &ltrim(std::string &s) {
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
+        return s;
+}
+
+// trim from end
+static inline std::string &rtrim(std::string &s) {
+        s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+        return s;
+}
+
+// trim from both ends
+static inline std::string &trim(std::string &s) {
+        return ltrim(rtrim(s));
 }
 
 /* This method will ask the user for the required inputs to the renderer, using
@@ -131,54 +159,64 @@ void Interface::DrawFrame()
 void Interface::GetInput()
 {
     this->deviceList.Initialize();
+	std::vector<cl::Platform> platforms;
+	cl::Platform::get(&platforms);
 
     /* Don't want visual feedback for platform/device selection. */
     curs_set(0);
     noecho();
 
     /* Get platform. */
-    this->platform = 0;
+    this->platformIndex = 0;
     DisplayStatus("Please select the OpenCL platform (up/down arrow keys).",
                   false);
    
     int input = 0; 
     while (input != '\n')
     {
-        Platform platform = this->deviceList.platforms[this->platform];
-        size_t count = this->deviceList.platforms.size();
+        this->platform = platforms[this->platformIndex];
+        size_t count = platforms.size();
+		std::string name;
+		platform.getInfo(CL_PLATFORM_NAME, &name);
 
         attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-        WriteLine(LINE_PLATFORM, platform.name);
+        WriteLine(LINE_PLATFORM, name);
         mvprintw(LINE_PLATFORM, 66, "#%d out of %d",
-                 this->platform + 1, count);
+                 this->platformIndex + 1, count);
 
         doupdate();
         input = getch();
 
-        if ((input == KEY_DOWN) || (this->platform > 0)) this->platform--;
-        if ((input == KEY_UP) || (this->platform > count)) this->platform++;
+        if ((input == KEY_DOWN) || (this->platformIndex > 0)) this->platformIndex--;
+        if ((input == KEY_UP) || (this->platformIndex > count)) this->platformIndex++;
     }
 
     /* Get device. */
-    this->device = 0;
+    this->deviceIndex = 0;
     DisplayStatus("Please select the OpenCL device.", false);
+
+	std::vector<cl::Device> devices;
+	this->platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
 
     input = 0;
     while (input != '\n')
     {
-        Platform platform = this->deviceList.platforms[this->platform];
-        size_t count = platform.devices.size();
+        this->device = devices[this->deviceIndex];
+        size_t count = devices.size();
+		std::string name;
+		device.getInfo(CL_DEVICE_NAME, &name);
+		name = trim(name);
 
         attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-        WriteLine(LINE_DEVICE, platform.devices[this->device].name);
+        WriteLine(LINE_DEVICE, name);
         mvprintw(LINE_DEVICE, 66, "#%d out of %d",
-                 this->device + 1, count);
+                 this->deviceIndex + 1, count);
 
         doupdate();
         input = getch();
 
-        if ((input == KEY_DOWN) || (this->device > 0)) this->device--;
-        if ((input == KEY_UP) || (this->device > count)) this->device++;
+        if ((input == KEY_DOWN) || (this->deviceIndex > 0)) this->deviceIndex--;
+        if ((input == KEY_UP) || (this->deviceIndex > count)) this->deviceIndex++;
     }
 
     /* We want visual feedback again. */
@@ -192,14 +230,14 @@ void Interface::GetInput()
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
     move(LINE_SCENEFILE, 18);
     getnstr(text, 60);
-    this->sceneFile = text;
+    this->source = text;
 
     /* Get output file. */
     DisplayStatus("Please enter the output file.", false);
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
     move(LINE_OUTPUTFILE, 18);
     getnstr(text, 60);
-    this->outputFile = text;
+    this->output = text;
 
     /* Get render width and height. */
     DisplayStatus("Please enter the render width and height.", false);
@@ -232,8 +270,15 @@ void Interface::GetInput()
 
 void Interface::DisplayProgress()
 {
-	attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-	mvprintw(LINE_PROGRESS, 46, "%.3d%%", (int)(progress * 100));
+	int prog = (int)(progress * 54);
+	int count = (prog > 27) ? prog + 6 : prog;
+
+	attron(COLOR_PAIR(COLOR_TITLE1)); attron(A_BOLD);
+
+	for (int t = 0; t < count; ++t) mvaddch(LINE_PROGRESS, 18 + t, ACS_CKBOARD);
+
+	attron(COLOR_PAIR(COLOR_TITLE1)); attron(A_BOLD);
+	mvprintw(LINE_PROGRESS, 45, " %.3d%% ", (int)(progress * 100));
 	refresh();
 	doupdate();
 }

@@ -10,7 +10,7 @@ PRNG::PRNG(cl_context context, cl_command_queue queue)
     this->buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(cl_prng),
                                   0, 0);
 
-    if (this->buffer == nullptr) throw std::runtime_error(Error(E_BUF, error));
+	Error::Check(Error::Memory, error);
 }
 
 void PRNG::Bind(cl_kernel kernel, cl_uint index)
@@ -18,7 +18,7 @@ void PRNG::Bind(cl_kernel kernel, cl_uint index)
     cl_int error = clSetKernelArg(kernel, index, sizeof(this->buffer),
                                     &this->buffer);
 
-    if (error != CL_SUCCESS) throw std::runtime_error(Error(E_BIND, error));
+    Error::Check(Error::Bind, error);
 }
 
 void PRNG::Renew(cl_command_queue queue)
@@ -29,7 +29,7 @@ void PRNG::Renew(cl_command_queue queue)
     cl_int error = clEnqueueWriteBuffer(queue, this->buffer, CL_TRUE, 0,
                                     sizeof(uint64_t), &this->seed, 0, 0, 0);
 
-    if (error != CL_SUCCESS) throw std::runtime_error(Error(E_WRITE, error));
+	Error::Check(Error::CLIO, error);
 }
 
 PRNG::~PRNG()

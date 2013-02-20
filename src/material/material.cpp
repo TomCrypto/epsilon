@@ -20,8 +20,7 @@ Materials::Materials(cl_context context, cl_command_queue queue,
     this->surfaces = clCreateImage(context, CL_MEM_READ_ONLY, &format, &desc,
                                    nullptr, &error);
 
-    if (this->surfaces == nullptr)
-        throw std::runtime_error(Error(E_BUF, error));
+	Error::Check(Error::Memory, error);
 
     size_t origin[3] = { 0, 0, 0 };
     size_t region[3] = {128, 1, 1 };
@@ -34,8 +33,7 @@ Materials::Materials(cl_context context, cl_command_queue queue,
                                     region, 0, 0, surfaces[t].diffuse,
                                     0, 0, 0);
 
-        if (error != CL_SUCCESS)
-            throw std::runtime_error(Error(E_WRITE, error));
+		Error::Check(Error::CLIO, error);
     }
 }
 
@@ -44,5 +42,5 @@ void Materials::Bind(cl_kernel kernel, cl_uint index)
     cl_int error = clSetKernelArg(kernel, index, sizeof(this->surfaces),
                                   &this->surfaces);
 
-    if (error != CL_SUCCESS) throw std::runtime_error(Error(E_BIND, error));
+	Error::Check(Error::Bind, error);
 }

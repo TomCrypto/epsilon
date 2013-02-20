@@ -6,9 +6,11 @@ class Interface
 {
 	public:
 		WINDOW* window;
-        std::string sceneFile, outputFile;
+        std::string source, output;
 		double progress;
-		size_t platform, device;
+		cl::Platform platform;
+		cl::Device device;
+		size_t platformIndex, deviceIndex;
 		size_t samples, width, height;
 
         DeviceList deviceList;

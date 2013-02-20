@@ -1,20 +1,38 @@
 #pragma once
 
-/* This file provides the Epsilon engine interface. The engine is initialized *
- * by passing it an OpenCL device, and is subsequently configured.            */
-
 #include <common/common.hpp>
+#include <engine/architecture.hpp>
 
+/** @file epsilon.hpp
+  * @brief Epsilon rendering engine.
+  *
+  * Thie file contains the renderer.
+***/
+
+/** @class Epsilon
+  * @brief The renderer.
+  *
+  *
+**/
 class Epsilon
 {
     private:
-        cl_device_id device;
-        cl_context context;
-        cl_command_queue queue;
-        size_t localGroupSize;
-        cl_program program;
-        cl_kernel kernel;
+        /** @brief List of kernel objects used by the renderer. **/
+        std::vector<KernelObject*> objects;
+        /** @brief The engine parameters. **/
+        EngineParams params;
 
     public:
-        Epsilon(cl_device_id device);
+        /** @brief Initializes the renderer.
+          * @param width The render width, in pixels.
+          * @param height The render height, in pixels.
+          * @param samples The number of samples per pixel.
+          * @param platform The OpenCL platform to use for rendering.
+          * @param device The OpenCL device to use for rendering.
+          * @param source The engine source (scene directory).
+          * @param output The engine output (PPM image file).
+        **/
+        Epsilon(size_t width, size_t height, size_t samples,
+                cl::Platform platform, cl::Device device,
+                std::string source, std::string output);
 };

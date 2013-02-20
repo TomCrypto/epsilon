@@ -2,12 +2,14 @@
 
 #include <ncurses.h>
 #include <CL/cl.h>
+#include <CL/cl.hpp>
 #include <cmath>
 #include <stdint.h>
 #include <algorithm>
 #include <exception>
 #include <stdexcept>
 #include <sstream>
+#include <fstream>
 #include <cstring>
 #include <string>
 #include <iostream>
