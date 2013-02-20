@@ -12,8 +12,14 @@
 *.la
 *.a
 
-# Executables
+# Executables and binaries
 bin/
+obj/
 
 # Documentation
 doc/
+
+# Swap and tmp files
+*.cpp~
+*.hpp~
+*.swp
