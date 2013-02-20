@@ -56,9 +56,11 @@ Epsilon::Epsilon(size_t width, size_t height, size_t samples,
 
     /* Add all kernel objects here... */
     this->objects.push_back(new PRNG());
+    this->objects.push_back(new PixelBuffer());
+	this->objects.push_back(new ETC());
 
     /* Add the bind order here (in the right order). */
-    cl_uint bindings[1] = { 0 };
+    cl_uint bindings[3] = { 1, 0, -1 };
 
     for (int t = 0; t < this->objects.size(); ++t)
     {
@@ -82,6 +84,20 @@ void Epsilon::Execute()
         if (this->objects[t]->IsActive())
             this->objects[t]->Update(this->params, this->sampleIndex);
     
+	cl_int error;
+	size_t local, global = this->params.width * this->params.height;
+	error = this->params.device.getInfo(CL_DEVICE_MAX_WORK_GROUP_SIZE,
+										&local);
+	Error::Check(Error::DeviceQuery, error);
+
+	cl::NDRange localSize(local), globalSize(global);
+	error = this->params.queue.enqueueNDRangeKernel(this->params.kernel,
+													cl::NullRange,
+													globalSize,
+													localSize);
+	Error::Check(Error::Execute, error);
+	this->params.queue.finish();
+
     this->sampleIndex++;
 }
 

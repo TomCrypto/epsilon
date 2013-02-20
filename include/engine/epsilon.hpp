@@ -4,6 +4,8 @@
 #include <engine/architecture.hpp>
 
 #include <math/prng.hpp>
+#include <render/render.hpp>
+#include <misc/etc.hpp>
 
 /** @file epsilon.hpp
   * @brief Epsilon rendering engine.

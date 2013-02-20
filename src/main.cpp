@@ -67,12 +67,14 @@ int main(int argc, char* argv[])
 		Epsilon engine = Epsilon(interface->width, interface->height, interface->samples,
 								 interface->platform, interface->device, interface->source, interface->output);
 
-		while (engine.Finished() == false)
+		while (!engine.Finished())
 		{
 			engine.Execute();
 			double* progress = (double*)engine.Query(Query::Progress);
 			interface->progress = *progress;
 			interface->DisplayProgress();
+			size_t* etc = (size_t*)engine.Query(Query::EstimatedTime);
+			interface->DisplayTime(*etc);
 		}
 
 		interface->DisplayStatus("Rendering complete.", false);

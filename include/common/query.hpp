@@ -20,4 +20,10 @@ namespace Query
       * @note \c Query will return a \c uint32_t.
     **/
     extern const size_t TriangleCount;
+
+    /** @brief Queries the estimated time to completion.
+      * @note \c Query will return a \c size_t representing the estimated
+      *       number of seconds until the renderer finishes.
+    **/
+    extern const size_t EstimatedTime;
 }

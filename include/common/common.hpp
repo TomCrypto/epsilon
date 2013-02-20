@@ -4,6 +4,7 @@
 #include <CL/cl.h>
 #include <CL/cl.hpp>
 #include <cmath>
+#include <ctime>
 #include <stdint.h>
 #include <algorithm>
 #include <exception>

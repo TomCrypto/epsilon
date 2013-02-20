@@ -283,6 +283,22 @@ void Interface::DisplayProgress()
 	doupdate();
 }
 
+void Interface::DisplayTime(size_t etc)
+{
+	attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
+	if (etc == (size_t)-1) WriteLine(LINE_ETC, "Indeterminate");
+	else
+	{
+		int hours = etc / 3600;
+		int minutes = (etc % 3600) / 60;
+		int seconds = etc % 60;
+		std::string fmt = std::to_string(hours) + " hours, "
+						+ std::to_string(minutes) + " minutes, "
+						+ std::to_string(seconds) + " seconds.";
+		WriteLine(LINE_ETC, fmt);
+	}
+}
+
 void Interface::Redraw()
 {
     int c = getch();

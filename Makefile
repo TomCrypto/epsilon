@@ -21,6 +21,9 @@ $(OBJECTS): obj/%.o : src/%.cpp $(HEADERS)
 	@mkdir -p $(@D)
 	@$(CXX) $(CPPFLAGS) $(INCLUDE) -c $< -o $@
 
+document:
+	@doxygen doc/Doxyfile > /dev/null
+
 clean:
 	@echo Cleaning $(EXECUTABLE)...
 	@rm -f $(addprefix bin/, $(EXECUTABLE))

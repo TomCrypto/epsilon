@@ -7,6 +7,14 @@
 #include <common/common.hpp>
 #include <engine/architecture.hpp>
 
+/** @file render.hpp
+  * @brief Pixel buffer manipulation
+  *
+  * This file contains the definition of a kernel object responsible for
+  * managing a pixel buffer, used by the renderer to draw and accumulate
+  * colors into.
+**/
+
 /* This is pixel, which contains a three-color tristimulus value of any color *
  * space (XYZ or RGB) and a fourth format-dependent value, generally defining *
  * the pixel's radiance. The formats are respectively XYZr and RGB. */
@@ -89,33 +97,27 @@ struct Pixel
         }
 };
 
-struct RenderBuffer
+class PixelBuffer : public KernelObject
 {
     private:
         size_t width, height, size;
-        cl_mem buffer;
+        cl::Buffer buffer;
         Pixel *pixels;
+        size_t index;
 
-    public:
-        RenderBuffer(cl_context context, size_t width, size_t height);
-        ~RenderBuffer();
+        void Acquire(const EngineParams& params);
+        void Upload(const EngineParams& params);
 
-        /* Bind buffer to kernel slot. */
-        void Bind(cl_kernel kernel, cl_uint index);
-
-        /* Read/write pixels from buffer. */
-        void Acquire(cl_command_queue queue, cl_bool block);
-        void Upload(cl_command_queue queue, cl_bool block);
-
-        /* Convert current XYZn to unnormalized RGB colors. */
         void ConvertToRGB();
+        void Tonemap();
+        void GammaCorrect();
 
-		/* Tone-maps current RGB colors to normalized RGB. */
-		void Tonemap();
-
-		/* Gamma-corrects the current RGB colors. */
-		void GammaCorrect();
-
-        /* Write the render AS-IS (no normalization) to a PPM file. */
         void WriteToFile(std::string path);
+    public:
+        bool IsActive();
+        void Initialize(const EngineParams& params);
+        void Bind(cl::Kernel kernel, cl_uint slot);
+        void Update(const EngineParams& params, size_t index);
+        void* Query(const EngineParams& params, size_t query);
+        void Cleanup(const EngineParams& params);
 };

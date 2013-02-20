@@ -1,54 +1,67 @@
 #include <render/render.hpp>
 
-RenderBuffer::RenderBuffer(cl_context context, size_t width, size_t height)
+bool PixelBuffer::IsActive() { return false; }
+
+void PixelBuffer::Initialize(const EngineParams& params)
 {
-    this->width = width;
-    this->height = height;
+    this->width = params.width;
+    this->height = params.height;
     this->size = this->width * this->height * sizeof(Pixel);
-    
-    /* Create pixel array and initialize to zero. */
+
     this->pixels = new Pixel[this->width * this->height];
 
-    /* Create a device-side render buffer. */
     cl_int error;
-    this->buffer = clCreateBuffer(context,
-                                  CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-                                  this->size, this->pixels, &error);
-    
-	Error::Check(Error::Memory, error);
+    this->buffer = cl::Buffer(params.context,
+                              CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+                              this->size, this->pixels, &error);
+    Error::Check(Error::Memory, error);
+
+    this->index = 0;
 }
 
-RenderBuffer::~RenderBuffer()
+void PixelBuffer::Cleanup(const EngineParams& params)
 {
-    clReleaseMemObject(this->buffer);
+    Acquire(params);
+    ConvertToRGB();
+    Tonemap();
+    GammaCorrect();
+    WriteToFile(params.output);
+
     delete[] this->pixels;
 }
 
-void RenderBuffer::Bind(cl_kernel kernel, cl_uint index)
+void PixelBuffer::Update(const EngineParams& params, size_t index)
 {
-    cl_int error = clSetKernelArg(kernel, index, sizeof(this->buffer),
-                                  &this->buffer);
-
-	Error::Check(Error::Bind, error);
+    this->index++;
 }
 
-void RenderBuffer::Acquire(cl_command_queue queue, cl_bool block)
+void* PixelBuffer::Query(const EngineParams& params, size_t query)
 {
-    cl_int error = clEnqueueReadBuffer(queue, this->buffer, block, 0,
-                                       this->size, this->pixels, 0, 0, 0);
+    return nullptr;
+}
 
+void PixelBuffer::Bind(cl::Kernel kernel, cl_uint slot)
+{
+    Error::Check(Error::Bind, kernel.setArg(slot, this->buffer));
+}
+
+void PixelBuffer::Acquire(const EngineParams& params)
+{
+    cl_int error;
+    error = params.queue.enqueueReadBuffer(this->buffer, CL_TRUE, 0,
+                                           this->size, this->pixels);
 	Error::Check(Error::CLIO, error);
 }
 
-void RenderBuffer::Upload(cl_command_queue queue, cl_bool block)
+void PixelBuffer::Upload(const EngineParams& params)
 {
-    cl_int error = clEnqueueWriteBuffer(queue, this->buffer, block, 0,
-                                        this->size, this->pixels, 0, 0, 0);
-
+    cl_int error;
+    error = params.queue.enqueueWriteBuffer(this->buffer, CL_FALSE, 0,
+                                            this->size, this->pixels);
 	Error::Check(Error::CLIO, error);
 }
 
-void RenderBuffer::ConvertToRGB()
+void PixelBuffer::ConvertToRGB()
 {
     /* Go over each pixel. */
     for (size_t t = 0; t < this->width * this->height; ++t)
@@ -57,7 +70,7 @@ void RenderBuffer::ConvertToRGB()
     }
 }
 
-void RenderBuffer::Tonemap()
+void PixelBuffer::Tonemap()
 {
 	float logAvg = 0.0f;
 	for (size_t t = 0; t < this->width * this->height; ++t)
@@ -75,7 +88,7 @@ void RenderBuffer::Tonemap()
 	}
 };
 
-void RenderBuffer::GammaCorrect()
+void PixelBuffer::GammaCorrect()
 {
 	for (size_t t = 0; t < this->width * this->height; ++t)
 	{
@@ -83,7 +96,7 @@ void RenderBuffer::GammaCorrect()
 	} 
 }
 
-void RenderBuffer::WriteToFile(std::string path)
+void PixelBuffer::WriteToFile(std::string path)
 {
     std::ofstream file;
     file.open(path);
