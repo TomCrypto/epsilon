@@ -1,0 +1,4 @@
+Compilation started
+In file included from :1:
+/home/ray/Projects/github/epsilon/cl/epsilon.cl:4:20: error: expected parameter declarator
+Compilation failed

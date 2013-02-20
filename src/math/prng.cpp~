@@ -1,38 +1,49 @@
 #include <math/prng.hpp>
 
-PRNG::PRNG(cl_context context, cl_command_queue queue)
+/* Device-side representation. */
+struct cl_prng { cl_ulong4 seed; };
+
+bool PRNG::IsActive() { return true; }
+
+void PRNG::Initialize(const EngineParams& params)
 {
-    /* Initialize seed to zero. */
+    cl_int error;
+    this->buffer = cl::Buffer(params.context, CL_MEM_READ_ONLY,
+                              sizeof(cl_prng), nullptr, &error);
+    Error::Check(Error::Memory, error);
+
     this->seed = 0;
-    cl_int error = 0;
-
-    /* Create the PRNG buffer. */
-    this->buffer = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(cl_prng),
-                                  0, 0);
-
-    if (this->buffer == nullptr) throw std::runtime_error(Error(E_BUF, error));
 }
 
-void PRNG::Bind(cl_kernel kernel, cl_uint index)
+void PRNG::Bind(cl::Kernel kernel, cl_uint index)
 {
-    cl_int error = clSetKernelArg(kernel, index, sizeof(this->buffer),
-                                    &this->buffer);
-
-    if (error != CL_SUCCESS) throw std::runtime_error(Error(E_BIND, error));
+    Error::Check(Error::Bind, kernel.setArg(index, this->buffer));
 }
 
-void PRNG::Renew(cl_command_queue queue)
+void PRNG::Update(const EngineParams& params, size_t index)
 {
-    /* Increment seed and upload new value. */
+    cl_int error = params.queue.enqueueWriteBuffer(this->buffer, CL_FALSE, 0,
+                                                   sizeof(uint64_t),
+                                                   &this->seed);
+    Error::Check(Error::CLIO, error);
     this->seed++;
-
-    cl_int error = clEnqueueWriteBuffer(queue, this->buffer, CL_TRUE, 0,
-                                    sizeof(uint64_t), &this->seed, 0, 0, 0);
-
-    if (error != CL_SUCCESS) throw std::runtime_error(Error(E_WRITE, error));
 }
 
-PRNG::~PRNG()
+void* PRNG::Query(const EngineParams& params, size_t query)
 {
-    clReleaseMemObject(this->buffer);
+    if (query == Query::Progress)
+    {
+        /* Most kernel objects can return progress. */
+        size_t total = params.samples - 1;
+        progress = (double)this->seed / total;
+        return &progress;
+    }
+
+    return 0;
+}
+
+void PRNG::Cleanup(const EngineParams& params)
+{
+    /* Don't need to do anything here, thanks to RAII. More complicated kernel
+     * objects which use dynamic structures will need to do some cleanup. */
 }

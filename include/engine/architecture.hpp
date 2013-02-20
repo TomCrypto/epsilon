@@ -113,18 +113,21 @@ class KernelObject
 
         /** @brief Returns object-specific information.
           * @param params The engine parameters.
-          * @param tag A tag identifying which information is required.
+          * @param query A value identifying which information is required.
           * @returns A pointer to the requested information. The format of
           *          this information may vary and is assumed to be known
           *          to the caller. If the information is not found, returns
-          *          zero.
+          *          \c nullptr (the null pointer).
           * @note Do not attempt to modify or deallocate the returned memory,
           *       as it belongs to the kernel object.
         **/
-        virtual void* Query(const EngineParams& params, size_t tag) = 0;
+        virtual void* Query(const EngineParams& params, size_t query) = 0;
 
 	    /** @brief Cleans up any resources used by the object.
           * @param params The engine parameters.
+          * @note It is also acceptable for kernel objects to do their cleanup
+          *       in their destructor, if they do not require information from
+          *       the \c EngineParams. 
         **/
         virtual void Cleanup(const EngineParams& params) = 0;
 };

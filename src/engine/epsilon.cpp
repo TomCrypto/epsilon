@@ -34,9 +34,66 @@ Epsilon::Epsilon(size_t width, size_t height, size_t samples,
     Error::Check(Error::Program, error);
 
     error = this->params.program.build(devices, "-I cl/");
-    // write compilation log here
+
+    if (error != CL_SUCCESS)
+    {
+        std::string log;
+        cl_int error_tmp;
+        error_tmp = this->params.program.getBuildInfo(this->params.device,
+                                                  CL_PROGRAM_BUILD_LOG, &log);
+        Error::Check(Error::BuildLog, error_tmp);
+        std::ofstream logfile("clc.log");
+        logfile << log;
+        logfile.close();
+    }
+
     Error::Check(Error::Build, error);
 
     this->params.kernel = cl::Kernel(this->params.program, "clmain", &error);
     Error::Check(Error::Kernel, error);
+
+    this->sampleIndex = 0;
+
+    /* Add all kernel objects here... */
+    this->objects.push_back(new PRNG());
+
+    /* Add the bind order here (in the right order). */
+    cl_uint bindings[1] = { 0 };
+
+    for (int t = 0; t < this->objects.size(); ++t)
+    {
+        this->objects[t]->Initialize(this->params);
+        this->objects[t]->Bind(this->params.kernel, bindings[t]);
+    }
+}
+
+Epsilon::~Epsilon()
+{
+    for (int t = 0; t < this->objects.size(); ++t)
+    {
+        this->objects[t]->Cleanup(this->params);
+        delete this->objects[t];
+    }
+}
+
+void Epsilon::Execute()
+{
+    for (int t = 0; t < this->objects.size(); ++t)
+        if (this->objects[t]->IsActive())
+            this->objects[t]->Update(this->params, this->sampleIndex);
+    
+    this->sampleIndex++;
+}
+
+bool Epsilon::Finished() { return this->sampleIndex == this->params.samples; }
+
+void* Epsilon::Query(size_t query)
+{
+    for (int t = 0; t < this->objects.size(); ++t)
+    {
+        void* ret = this->objects[t]->Query(this->params, query);
+        if (ret != nullptr) return ret;
+    }
+
+    return nullptr;
 }

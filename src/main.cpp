@@ -60,14 +60,24 @@ int main(int argc, char* argv[])
 		interface = new Interface();
 		interface->GetInput();
 
-		DeviceList list;
-		list.Initialize();
+		//DeviceList list;
+		//list.Initialize();
 
-		cl_device_id device = list.platforms[0].devices[0].ptr;
-		fprintf(stderr, "Start\n");
+		//cl_device_id device = list.platforms[0].devices[0].ptr;
 		Epsilon engine = Epsilon(interface->width, interface->height, interface->samples,
 								 interface->platform, interface->device, interface->source, interface->output);
-		fprintf(stderr, "End\n");
+
+		while (engine.Finished() == false)
+		{
+			engine.Execute();
+			double* progress = (double*)engine.Query(Query::Progress);
+			interface->progress = *progress;
+			interface->DisplayProgress();
+		}
+
+		interface->DisplayStatus("Rendering complete.", false);
+
+#if 0
 
 		/* Create context, queue, etc.. */
 		cl_int error = 0;
@@ -357,6 +367,8 @@ int main(int argc, char* argv[])
 		clReleaseMemObject(seed);
 		clReleaseCommandQueue(queue);
 		clReleaseContext(context);
+
+#endif
 	}
 	catch (exception& e)
 	{

@@ -40,6 +40,8 @@ namespace Error
     extern const std::string Kernel;
     /** @brief Kernel execution on the selected device did not succeed. **/
     extern const std::string Execute;
+	/** @brief The CLC build log (if build fails) could not be retrieved. **/
+    extern const std::string BuildLog;
 
     /** @brief Throws a formatted exception based on an error code.
       * @param msg The message to use, such as Error::Memory.

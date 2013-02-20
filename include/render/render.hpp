@@ -5,10 +5,11 @@
  * as tone-mapping or gamma-correction. */
 
 #include <common/common.hpp>
-//#include <spectrum/spectrum.hpp>
+#include <engine/architecture.hpp>
 
 /* This is pixel, which contains a three-color tristimulus value of any color *
- * space (XYZ or RGB) and a fourth format-dependent value, generally defining *  * the pixel's radiance. The formats are respectively XYZr and RGB. */
+ * space (XYZ or RGB) and a fourth format-dependent value, generally defining *
+ * the pixel's radiance. The formats are respectively XYZr and RGB. */
 struct Pixel
 {
     private:
