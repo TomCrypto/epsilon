@@ -22,8 +22,10 @@ namespace Query
     extern const size_t TriangleCount;
 
     /** @brief Queries the estimated time to completion.
-      * @note \c Query will return a \c size_t representing the estimated
+      * @note \c Query will return a \c double representing the estimated
       *       number of seconds until the renderer finishes.
+      * @note If the value returned is negative, it means time to completion
+      *       is not yet available and is indeterminate.
     **/
     extern const size_t EstimatedTime;
 }

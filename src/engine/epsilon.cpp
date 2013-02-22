@@ -55,16 +55,17 @@ Epsilon::Epsilon(size_t width, size_t height, size_t samples,
     this->sampleIndex = 0;
 
     /* Add all kernel objects here... */
-    this->objects.push_back(new PRNG());
-    this->objects.push_back(new PixelBuffer());
-	this->objects.push_back(new ETC());
+    this->objects.push_back(new PixelBuffer(this->params));
+	this->objects.push_back(new DeviceParams(this->params));
+    this->objects.push_back(new PRNG(this->params));
+	this->objects.push_back(new Progress(this->params));
 
     /* Add the bind order here (in the right order). */
-    cl_uint bindings[3] = { 1, 0, -1 };
+    cl_uint bindings[4] = { 0, 1, 2, -1 };
 
     for (int t = 0; t < this->objects.size(); ++t)
     {
-        this->objects[t]->Initialize(this->params);
+        this->objects[t]->Initialize();
         this->objects[t]->Bind(this->params.kernel, bindings[t]);
     }
 }
@@ -73,7 +74,6 @@ Epsilon::~Epsilon()
 {
     for (int t = 0; t < this->objects.size(); ++t)
     {
-        this->objects[t]->Cleanup(this->params);
         delete this->objects[t];
     }
 }
@@ -82,7 +82,7 @@ void Epsilon::Execute()
 {
     for (int t = 0; t < this->objects.size(); ++t)
         if (this->objects[t]->IsActive())
-            this->objects[t]->Update(this->params, this->sampleIndex);
+            this->objects[t]->Update(this->sampleIndex);
     
 	cl_int error;
 	size_t local, global = this->params.width * this->params.height;
@@ -107,7 +107,7 @@ void* Epsilon::Query(size_t query)
 {
     for (int t = 0; t < this->objects.size(); ++t)
     {
-        void* ret = this->objects[t]->Query(this->params, query);
+        void* ret = this->objects[t]->Query(query);
         if (ret != nullptr) return ret;
     }
 

@@ -1,9 +1,5 @@
 #pragma once
 
-/* This file manages a render buffer, and provides useful functions to output *
- * this buffer to a .ppm file or to perform manipulations on the buffer, such *
- * as tone-mapping or gamma-correction. */
-
 #include <common/common.hpp>
 #include <engine/architecture.hpp>
 
@@ -97,6 +93,44 @@ struct Pixel
         }
 };
 
+
+
+/** @class DeviceParams
+  * @brief Device-side engine params
+  *
+  * This kernel object uploads relevant engine parameters to the kernel, this
+  * includes render width and height. This is required for the kernel to work.
+  *
+  * It is not active, since it uploads constant data.
+  *
+  * This kernel object handles no queries.
+**/
+class DeviceParams : public KernelObject
+{
+    private:
+        cl::Buffer buffer;
+
+    public:
+        DeviceParams(const EngineParams& params) : KernelObject(params) { }
+        ~DeviceParams() { }
+
+        bool IsActive();
+        void Initialize();
+        void Bind(cl::Kernel kernel, cl_uint slot);
+        void Update(size_t index);
+        void* Query(size_t query);
+};
+
+/** @class PixelBuffer
+  * @brief Device-side pixel buffer
+  *
+  * This kernel object is responsible for managing a pixel buffer, which is a
+  * raster array of pixels which the kernel can read from and write to. This
+  * kernel object is passive, given that it only performs work during its
+  * initialization and cleanup (to save the final pixel buffer to file).
+  *
+  * This kernel object handles no queries.
+**/
 class PixelBuffer : public KernelObject
 {
     private:
@@ -114,10 +148,12 @@ class PixelBuffer : public KernelObject
 
         void WriteToFile(std::string path);
     public:
+        PixelBuffer(const EngineParams& params) : KernelObject(params) { }
+        ~PixelBuffer();
+
         bool IsActive();
-        void Initialize(const EngineParams& params);
+        void Initialize();
         void Bind(cl::Kernel kernel, cl_uint slot);
-        void Update(const EngineParams& params, size_t index);
-        void* Query(const EngineParams& params, size_t query);
-        void Cleanup(const EngineParams& params);
+        void Update(size_t index);
+        void* Query(size_t query);
 };

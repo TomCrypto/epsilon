@@ -60,24 +60,26 @@ int main(int argc, char* argv[])
 		interface = new Interface();
 		interface->GetInput();
 
+		Epsilon* engine = new Epsilon(interface->width, interface->height, interface->samples,
+								 	  interface->platform, interface->device, interface->source, interface->output);
+
 		//DeviceList list;
 		//list.Initialize();
 
 		//cl_device_id device = list.platforms[0].devices[0].ptr;
-		Epsilon engine = Epsilon(interface->width, interface->height, interface->samples,
-								 interface->platform, interface->device, interface->source, interface->output);
 
-		while (!engine.Finished())
+		while (!engine->Finished())
 		{
-			engine.Execute();
-			double* progress = (double*)engine.Query(Query::Progress);
+			engine->Execute();
+			double* progress = (double*)engine->Query(Query::Progress);
 			interface->progress = *progress;
 			interface->DisplayProgress();
-			size_t* etc = (size_t*)engine.Query(Query::EstimatedTime);
+			double* etc = (double*)engine->Query(Query::EstimatedTime);
 			interface->DisplayTime(*etc);
 		}
 
 		interface->DisplayStatus("Rendering complete.", false);
+		delete engine;
 
 #if 0
 

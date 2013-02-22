@@ -22,7 +22,7 @@ $(OBJECTS): obj/%.o : src/%.cpp $(HEADERS)
 	@$(CXX) $(CPPFLAGS) $(INCLUDE) -c $< -o $@
 
 document:
-	@doxygen doc/Doxyfile > /dev/null
+	@doxygen > /dev/null
 
 clean:
 	@echo Cleaning $(EXECUTABLE)...

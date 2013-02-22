@@ -43,7 +43,7 @@ struct EngineParams
 };
 
 /** @class KernelObject
-  * @brief Provides a uniform interface for kernel arguments.
+  * @brief Uniform kernel argument interface
   * 
   * Each kernel object manages its own memory (both host-side and device-side)
   * and binds itself to a particular kernel argument slot, provided by the
@@ -61,17 +61,18 @@ struct EngineParams
 **/
 class KernelObject
 {
-    private:
+    protected:
+        /** @brief The engine parameters, provided by the engine. **/
+        const EngineParams& params;
+
         /** @brief Loads scene data based on an identifier.
           * @param id The identifier of the scene data to load.
-          * @param params The engine parameters which were given.
           * @param data A streamable object containing the scene data.
           * @note If the scene data cannot be found, this will throw an
           *       exception, and the kernel object should probably die
           *       and cause the engine to fail if it cannot recover.
         **/
-        void GetData(std::string id, const EngineParams& params,
-                     std::ifstream& data)
+        void GetData(std::string id, std::ifstream& data)
         {
             try
             {
@@ -85,6 +86,15 @@ class KernelObject
         }
 
     public:
+        /** @brief Constructs the kernel object and passes engine parameters.
+          * @param params The engine parameters.
+          * @note No initialization should be performed in the constructor.
+        **/
+        KernelObject(const EngineParams& params) : params(params)
+        {
+            //this->params = 
+        } 
+
         /** @brief Returns whether the kernel object is active.
           * @return If this returns \c true, then the kernel object's \c Update
           *         method will be called before each kernel invocation.
@@ -92,9 +102,8 @@ class KernelObject
         virtual bool IsActive() = 0;
 
         /** @brief Initializes the kernel object.
-          * @param params The engine parameters.
         **/
-        virtual void Initialize(const EngineParams& params) = 0;
+        virtual void Initialize() = 0;
 
         /** @brief Binds the kernel object to a kernel.
           * @param kernel The OpenCL kernel to bind to.
@@ -103,16 +112,14 @@ class KernelObject
         virtual void Bind(cl::Kernel kernel, cl_uint slot) = 0;
 
         /** @brief Updates the kernel object.
-          * @param params The engine parameters.
           * @param index This indicates how many previous kernel invocations
           *              have occurred (e.g. if this contains 3, then this
           *              method has already been called three times).
           * @note In total, this method will be called \c params.samples times.
         **/
-        virtual void Update(const EngineParams& params, size_t index) = 0;
+        virtual void Update(size_t index) = 0;
 
         /** @brief Returns object-specific information.
-          * @param params The engine parameters.
           * @param query A value identifying which information is required.
           * @returns A pointer to the requested information. The format of
           *          this information may vary and is assumed to be known
@@ -121,13 +128,9 @@ class KernelObject
           * @note Do not attempt to modify or deallocate the returned memory,
           *       as it belongs to the kernel object.
         **/
-        virtual void* Query(const EngineParams& params, size_t query) = 0;
+        virtual void* Query(size_t query) = 0;
 
-	    /** @brief Cleans up any resources used by the object.
-          * @param params The engine parameters.
-          * @note It is also acceptable for kernel objects to do their cleanup
-          *       in their destructor, if they do not require information from
-          *       the \c EngineParams. 
+        /** @brief Frees the kernel object.
         **/
-        virtual void Cleanup(const EngineParams& params) = 0;
+        virtual ~KernelObject() { }
 };

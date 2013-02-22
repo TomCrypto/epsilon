@@ -283,15 +283,16 @@ void Interface::DisplayProgress()
 	doupdate();
 }
 
-void Interface::DisplayTime(size_t etc)
+void Interface::DisplayTime(double etc)
 {
 	attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-	if (etc == (size_t)-1) WriteLine(LINE_ETC, "Indeterminate");
+	if (etc < 0.0) WriteLine(LINE_ETC, "Indeterminate");
 	else
 	{
-		int hours = etc / 3600;
-		int minutes = (etc % 3600) / 60;
-		int seconds = etc % 60;
+		size_t t = (size_t)(etc - 0.5);
+		int hours = t / 3600;
+		int minutes = (t % 3600) / 60;
+		int seconds = t % 60;
 		std::string fmt = std::to_string(hours) + " hours, "
 						+ std::to_string(minutes) + " minutes, "
 						+ std::to_string(seconds) + " seconds.";

@@ -1,8 +1,43 @@
 #include <render/render.hpp>
 
+struct __attribute__ ((packed)) cl_buffer
+{
+    cl_uint width, height;
+};
+
+bool DeviceParams::IsActive() { return false; }
+
+void DeviceParams::Initialize()
+{
+    cl_buffer data = { params.width, params.height };
+
+    cl_int error;
+    this->buffer = cl::Buffer(params.context,
+                              CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                              sizeof(cl_buffer), &data, &error);
+    Error::Check(Error::Memory, error);
+}
+
+void DeviceParams::Bind(cl::Kernel kernel, cl_uint slot)
+{
+    Error::Check(Error::Bind, kernel.setArg(slot, this->buffer));
+}
+
+void DeviceParams::Update(size_t index)
+{
+    return;
+}
+
+void* DeviceParams::Query(size_t query)
+{
+    return nullptr;
+}
+
+/******************************************************************************/
+
 bool PixelBuffer::IsActive() { return false; }
 
-void PixelBuffer::Initialize(const EngineParams& params)
+void PixelBuffer::Initialize()
 {
     this->width = params.width;
     this->height = params.height;
@@ -19,7 +54,7 @@ void PixelBuffer::Initialize(const EngineParams& params)
     this->index = 0;
 }
 
-void PixelBuffer::Cleanup(const EngineParams& params)
+PixelBuffer::~PixelBuffer()
 {
     Acquire(params);
     ConvertToRGB();
@@ -30,12 +65,12 @@ void PixelBuffer::Cleanup(const EngineParams& params)
     delete[] this->pixels;
 }
 
-void PixelBuffer::Update(const EngineParams& params, size_t index)
+void PixelBuffer::Update(size_t index)
 {
     this->index++;
 }
 
-void* PixelBuffer::Query(const EngineParams& params, size_t query)
+void* PixelBuffer::Query(size_t query)
 {
     return nullptr;
 }

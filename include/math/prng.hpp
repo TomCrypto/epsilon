@@ -13,6 +13,8 @@
   * This is a lightweight, cryptographic-grade pseudorandom number generator,
   * wrapped up as a kernel object. It is active, as it uploads a new seed to
   * the device at every kernel invocation.
+  *
+  * This kernel object handles no queries.
 **/
 class PRNG : public KernelObject
 {
@@ -20,15 +22,15 @@ class PRNG : public KernelObject
         /** @brief We use a 64-bit seed though we could go up to 256 bits. **/
         uint64_t seed;
 
-        double progress;
-
         /** @brief This is the device-side buffer containing the seed. **/
         cl::Buffer buffer;
     public:
+		PRNG(const EngineParams& params) : KernelObject(params) { }
+		~PRNG() { }
+
         bool IsActive();
-        void Initialize(const EngineParams& params);
+        void Initialize();
         void Bind(cl::Kernel kernel, cl_uint slot);
-        void Update(const EngineParams& params, size_t index);
-        void* Query(const EngineParams& params, size_t query);
-        void Cleanup(const EngineParams& params);
+        void Update(size_t index);
+        void* Query(size_t query);
 };

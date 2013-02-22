@@ -21,7 +21,7 @@ class Interface
 
         void DisplayStatus(std::string message, bool error);
 		void DisplayProgress();
-		void DisplayTime(size_t etc);
+		void DisplayTime(double etc);
 
 		void DrawFrame();
         void GetInput();
