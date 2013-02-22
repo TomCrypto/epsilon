@@ -22,6 +22,7 @@ class Interface
         void DisplayStatus(std::string message, bool error);
 		void DisplayProgress();
 		void DisplayTime(double etc);
+		void DisplayStatistics(double elapsed, double progress, uint32_t triangles);
 
 		void Finish();
 

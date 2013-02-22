@@ -16,7 +16,7 @@
 #include <iostream>
 #include <fstream>
 #include <common/error.hpp>
-#include <math/vector.hpp>
+#include <math/aabb.hpp>
 #include <common/query.hpp>
 
 #define PI 3.14159265f

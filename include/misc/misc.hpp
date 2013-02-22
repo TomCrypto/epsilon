@@ -24,6 +24,7 @@ class Progress : public KernelObject
 {
     private:
         time_t startTime;
+		double elapsed;
         double progress;
         double ETC;
 

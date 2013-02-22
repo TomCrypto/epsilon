@@ -11,4 +11,4 @@ Remember you need an OpenCL 1.2 device to run this. Do not try with 1.1 or 1.0, 
 
 Windows users: you will need PDCurses to run this (just as Linux users will need ncurses). No other libraries beyond that and OpenCL are needed.
 
-NOTE: the raytracing part has been brought down for the moment, to facilitate refactoring. Stand by!
+NOTE: the raytracing part is back up, now with CPU/GPU BVH acceleration! though you'll find the performance kind of sucks on GPU's, given it's a direct port and still needs to be optimized for GPU memory patterns.

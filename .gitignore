@@ -25,4 +25,5 @@ doc/
 *.swp
 
 # Renders
+excluded/
 *.ppm

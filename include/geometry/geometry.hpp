@@ -42,12 +42,26 @@ class Triangle
 
         /* Precomputed... */
         Vector x, y, n, c;
+		AABB boundingBox;
+		Vector centroid;
 
         /* Creates the triangle from three points. */
         Triangle(Vector p1, Vector p2, Vector p3, float material);
 
+		/* This function returns the bounding box of the triangle. */
+        AABB BoundingBox() { return this->boundingBox; }
+
+        /* This function returns the centroid of the triangle. */
+        Vector Centroid() { return this->centroid; }
+
         /* Outputs the equivalent OpenCL triangle structure. */
         void CL(cl_triangle *out);
+};
+
+struct BVHFlatNode
+{
+	AABB bbox;
+	uint32_t start, nPrims, rightOffset;
 };
 
 /** @class Geometry
@@ -61,11 +75,19 @@ class Triangle
 class Geometry : public KernelObject
 {
     private:
-        std::vector<Triangle> list;
+		void BuildBVH();
+
+        std::vector<Triangle*> list;
         cl::Buffer triangles;
         uint32_t count;
 
 		cl::Buffer sceneInfo;
+
+		uint32_t leafSize;
+		uint32_t nLeafs, nNodes;
+		BVHFlatNode* flatTree;
+
+		cl::Buffer nodes;
 
     public:
         Geometry(EngineParams& params) : KernelObject(params) { }

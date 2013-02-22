@@ -69,6 +69,10 @@ int main(int argc, char* argv[])
 			interface->DisplayProgress();
 			double* etc = (double*)engine->Query(Query::EstimatedTime);
 			interface->DisplayTime(*etc);
+
+			double* elapsed = (double*)engine->Query(Query::ElapsedTime);
+			uint32_t* triangles = (uint32_t*)engine->Query(Query::TriangleCount);
+			interface->DisplayStatistics(*elapsed, *progress, *triangles);
 		}
 
 		interface->DisplayStatus("Rendering complete.", false);

@@ -300,6 +300,20 @@ void Interface::DisplayTime(double etc)
 	}
 }
 
+void Interface::DisplayStatistics(double elapsed, double progress, uint32_t triangles)
+{
+	/* Total samples so far = progress * width * height. */
+	/* Total samples per second = total samples / second. */
+	double speed = this->samples * progress * this->width * this->height / elapsed;
+	speed /= (1000 * 1000);
+
+	std::stringstream ss;
+	ss.precision(3);
+	ss << "Triangles: " << triangles << " (" << speed << " million samples/second)";
+
+	WriteLine(LINE_STATISTICS, ss.str());
+}
+
 void Interface::Redraw()
 {
     int c = getch();

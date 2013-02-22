@@ -4,7 +4,7 @@
  * the bounding volume hierarchy code. This structure also exists device-side *
  * as it is used during bounding volume hierarchy traversal.                  */
 
-#include <common/common.hpp>
+#include <math/vector.hpp>
 
 struct cl_aabb
 {

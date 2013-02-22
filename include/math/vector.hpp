@@ -3,7 +3,10 @@
 /* This file contains definitions for a three-dimensional vector to assist in *
  * performing vector math which can be exported to the device cl_float4 type. */
 
-#include <common/common.hpp>
+#include <CL/cl.h>
+#include <CL/cl.hpp>
+#include <cmath>
+#include <iostream>
 
 struct Vector
 {
@@ -18,6 +21,14 @@ struct Vector
     void operator /= (Vector a) { *this = *this / a; }
     void operator *= (float a)  { *this = *this * a; }
     void operator /= (float a)  { *this = *this / a; }
+
+	float operator [] (int index)
+	{
+		if (index == 0) return x;
+		if (index == 1) return y;
+		if (index == 2) return z;
+		return 0.0f;
+	}
 
     Vector operator + (const Vector& b) const
     {
