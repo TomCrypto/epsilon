@@ -54,19 +54,20 @@ Epsilon::Epsilon(size_t width, size_t height, size_t samples,
 
     this->sampleIndex = 0;
 
-    /* Add all kernel objects here... */
-    this->objects.push_back(new PixelBuffer(this->params));
+    /* Add all kernel objects here... in the right order. */
+    this->objects.push_back(new PixelBuffer (this->params));
 	this->objects.push_back(new DeviceParams(this->params));
-    this->objects.push_back(new PRNG(this->params));
-	this->objects.push_back(new Progress(this->params));
+    this->objects.push_back(new Tristimulus (this->params));
+    this->objects.push_back(new Geometry    (this->params));
+    this->objects.push_back(new Camera      (this->params));
+	this->objects.push_back(new PRNG        (this->params));
+	this->objects.push_back(new Progress    (this->params));
 
-    /* Add the bind order here (in the right order). */
-    cl_uint bindings[4] = { 0, 1, 2, -1 };
-
+	cl_uint slot = 0;
     for (int t = 0; t < this->objects.size(); ++t)
     {
         this->objects[t]->Initialize();
-        this->objects[t]->Bind(this->params.kernel, bindings[t]);
+        this->objects[t]->Bind(&slot);
     }
 }
 

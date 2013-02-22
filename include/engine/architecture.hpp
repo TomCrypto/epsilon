@@ -63,7 +63,7 @@ class KernelObject
 {
     protected:
         /** @brief The engine parameters, provided by the engine. **/
-        const EngineParams& params;
+        EngineParams& params;
 
         /** @brief Loads scene data based on an identifier.
           * @param id The identifier of the scene data to load.
@@ -90,10 +90,7 @@ class KernelObject
           * @param params The engine parameters.
           * @note No initialization should be performed in the constructor.
         **/
-        KernelObject(const EngineParams& params) : params(params)
-        {
-            //this->params = 
-        } 
+        KernelObject(EngineParams& params) : params(params) { }
 
         /** @brief Returns whether the kernel object is active.
           * @return If this returns \c true, then the kernel object's \c Update
@@ -106,10 +103,12 @@ class KernelObject
         virtual void Initialize() = 0;
 
         /** @brief Binds the kernel object to a kernel.
-          * @param kernel The OpenCL kernel to bind to.
-          * @param slot The argument slot to bind to.
+          * @param slot A running pointer to the next available slot. The
+          *             kernel object is to use up as many slots starting
+          *             from this one, and increment this pointer for the
+          *             next kernel object.
         **/
-        virtual void Bind(cl::Kernel kernel, cl_uint slot) = 0;
+        virtual void Bind(cl_uint* slot) = 0;
 
         /** @brief Updates the kernel object.
           * @param index This indicates how many previous kernel invocations

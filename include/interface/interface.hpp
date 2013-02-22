@@ -23,6 +23,8 @@ class Interface
 		void DisplayProgress();
 		void DisplayTime(double etc);
 
+		void Finish();
+
 		void DrawFrame();
         void GetInput();
 		void Redraw();

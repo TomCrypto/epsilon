@@ -111,12 +111,12 @@ class DeviceParams : public KernelObject
         cl::Buffer buffer;
 
     public:
-        DeviceParams(const EngineParams& params) : KernelObject(params) { }
+        DeviceParams(EngineParams& params) : KernelObject(params) { }
         ~DeviceParams() { }
 
         bool IsActive();
         void Initialize();
-        void Bind(cl::Kernel kernel, cl_uint slot);
+        void Bind(cl_uint* slot);
         void Update(size_t index);
         void* Query(size_t query);
 };
@@ -148,12 +148,36 @@ class PixelBuffer : public KernelObject
 
         void WriteToFile(std::string path);
     public:
-        PixelBuffer(const EngineParams& params) : KernelObject(params) { }
+        PixelBuffer(EngineParams& params) : KernelObject(params) { }
         ~PixelBuffer();
 
         bool IsActive();
         void Initialize();
-        void Bind(cl::Kernel kernel, cl_uint slot);
+        void Bind(cl_uint* slot);
+        void Update(size_t index);
+        void* Query(size_t query);
+};
+
+
+/** @class Tristimulus
+  * @brief Color-matching curve
+  *
+  * This kernel object just uploads a color-matching curve to the device, to
+  * map optical wavelengths to their tristimulus "perceptual" XYZ values.
+  *
+  * This kernel object handles no queries.
+**/
+class Tristimulus : public KernelObject
+{
+    private:
+        cl::Image2D buffer;
+    public:
+        Tristimulus(EngineParams& params) : KernelObject(params) { }
+        ~Tristimulus() { }
+
+        bool IsActive();
+        void Initialize();
+        void Bind(cl_uint* slot);
         void Update(size_t index);
         void* Query(size_t query);
 };

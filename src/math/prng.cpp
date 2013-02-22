@@ -15,14 +15,15 @@ void PRNG::Initialize()
     this->seed = 0;
 }
 
-void PRNG::Bind(cl::Kernel kernel, cl_uint index)
+void PRNG::Bind(cl_uint* slot)
 {
-    Error::Check(Error::Bind, kernel.setArg(index, this->buffer));
+    Error::Check(Error::Bind, params.kernel.setArg(*slot, this->buffer));
+	(*slot)++;
 }
 
 void PRNG::Update(size_t index)
 {
-    cl_int error = params.queue.enqueueWriteBuffer(this->buffer, CL_FALSE, 0,
+    cl_int error = params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
                                                    sizeof(uint64_t),
                                                    &this->seed);
     Error::Check(Error::CLIO, error);

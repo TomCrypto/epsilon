@@ -2,15 +2,7 @@
 #include <cstdio>
 #include <common/common.hpp>
 #include <interface/interface.hpp>
-#include <math/vector.hpp>
-#include <geometry/triangle.hpp>
-#include <math/aabb.hpp>
 #include <engine/epsilon.hpp>
-#include <camera/camera.hpp>
-#include <render/render.hpp>
-#include <spectrum/spectrum.hpp>
-#include <math/prng.hpp>
-#include <material/material.hpp>
 #include <unistd.h>
 
 using namespace std;
@@ -67,6 +59,7 @@ int main(int argc, char* argv[])
 		//list.Initialize();
 
 		//cl_device_id device = list.platforms[0].devices[0].ptr;
+		interface->DisplayStatus("Rendering...", false);
 
 		while (!engine->Finished())
 		{
@@ -79,6 +72,7 @@ int main(int argc, char* argv[])
 		}
 
 		interface->DisplayStatus("Rendering complete.", false);
+		interface->Finish();
 		delete engine;
 
 #if 0

@@ -305,6 +305,12 @@ void Interface::Redraw()
     int c = getch();
 }
 
+void Interface::Finish()
+{
+	attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
+	WriteLine(LINE_ETC, "N/A");
+}
+
 Interface::~Interface()
 {
     endwin();

@@ -7,7 +7,7 @@ void Progress::Initialize()
     return;
 }
 
-void Progress::Bind(cl::Kernel kernel, cl_uint slot)
+void Progress::Bind(cl_uint* slot)
 {
     return;
 }

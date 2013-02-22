@@ -6,6 +6,8 @@
 #include <math/prng.hpp>
 #include <render/render.hpp>
 #include <misc/misc.hpp>
+#include <math/camera.hpp>
+#include <geometry/geometry.hpp>
 
 /** @file epsilon.hpp
   * @brief Epsilon rendering engine.

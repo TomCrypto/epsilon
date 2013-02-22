@@ -28,12 +28,12 @@ class Progress : public KernelObject
         double ETC;
 
     public:
-		Progress(const EngineParams& params) : KernelObject(params) { }
+		Progress(EngineParams& params) : KernelObject(params) { }
 		~Progress() { }
 
         bool IsActive();
         void Initialize();
-        void Bind(cl::Kernel kernel, cl_uint slot);
+        void Bind(cl_uint* slot);
         void Update(size_t index);
         void* Query(size_t query);
 };
