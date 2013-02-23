@@ -90,12 +90,10 @@ class Geometry : public KernelObject
 		cl::Buffer nodes;
 
     public:
-        Geometry(EngineParams& params) : KernelObject(params) { }
+        Geometry(EngineParams& params);
         ~Geometry() { }
 
-        bool IsActive();
-        void Initialize();
-        void Bind(cl_uint* slot);
-        void Update(size_t index);
+        void Bind(cl_uint* index);
+        void Update(size_t pass);
         void* Query(size_t query);
 };

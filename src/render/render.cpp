@@ -5,11 +5,9 @@ struct __attribute__ ((packed)) cl_buffer
     cl_uint width, height;
 };
 
-bool DeviceParams::IsActive() { return false; }
-
-void DeviceParams::Initialize()
+DeviceParams::DeviceParams(EngineParams& params) : KernelObject(params)
 {
-    cl_buffer data = { params.width, params.height };
+    cl_buffer data = { (cl_uint)params.width, (cl_uint)params.height };
 
     cl_int error;
     this->buffer = cl::Buffer(params.context,
@@ -18,27 +16,25 @@ void DeviceParams::Initialize()
     Error::Check(Error::Memory, error);
 }
 
-void DeviceParams::Bind(cl_uint* slot)
+void DeviceParams::Bind(cl_uint* index)
 {
-	Error::Check(Error::Bind, params.kernel.setArg(*slot, this->buffer));
-	(*slot)++;
+	Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
+	(*index)++;
 }
 
-void DeviceParams::Update(size_t index)
+void DeviceParams::Update(size_t /* index */)
 {
     return;
 }
 
-void* DeviceParams::Query(size_t query)
+void* DeviceParams::Query(size_t /* query */)
 {
     return nullptr;
 }
 
 /******************************************************************************/
 
-bool PixelBuffer::IsActive() { return false; }
-
-void PixelBuffer::Initialize()
+PixelBuffer::PixelBuffer(EngineParams& params) : KernelObject(params)
 {
     this->width = params.width;
     this->height = params.height;
@@ -66,20 +62,20 @@ PixelBuffer::~PixelBuffer()
     delete[] this->pixels;
 }
 
-void PixelBuffer::Update(size_t index)
+void PixelBuffer::Update(size_t /* index */)
 {
     this->index++;
 }
 
-void* PixelBuffer::Query(size_t query)
+void* PixelBuffer::Query(size_t /* query */)
 {
     return nullptr;
 }
 
-void PixelBuffer::Bind(cl_uint* slot)
+void PixelBuffer::Bind(cl_uint* index)
 {
-	Error::Check(Error::Bind, params.kernel.setArg(*slot, this->buffer));
-	(*slot)++;
+	Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
+	(*index)++;
 }
 
 void PixelBuffer::Acquire(const EngineParams& params)
@@ -196,9 +192,7 @@ static XYZp ColorMatchingCurve[SAMPLES] = {
     XYZp(0.0002,0.0001,0.0000), XYZp(0.0002,0.0001,0.0000), XYZp(0.0001,0.0000,0.0000),
     XYZp(0.0001,0.0000,0.0000), XYZp(0.0001,0.0000,0.0000), XYZp(0.0000,0.0000,0.0000)};
 
-bool Tristimulus::IsActive() { return false; }
-
-void Tristimulus::Initialize()
+Tristimulus::Tristimulus(EngineParams& params) : KernelObject(params)
 {
     cl_int error;
     cl::ImageFormat format(CL_RGBA, CL_FLOAT);
@@ -222,18 +216,18 @@ void Tristimulus::Initialize()
     Error::Check(Error::CLIO, error);
 }
 
-void Tristimulus::Bind(cl_uint* slot)
+void Tristimulus::Bind(cl_uint* index)
 {
-    Error::Check(Error::Bind, params.kernel.setArg(*slot, this->buffer));
-	(*slot)++;
+    Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
+	(*index)++;
 }
 
-void Tristimulus::Update(size_t index)
+void Tristimulus::Update(size_t /* index */)
 {
     return;
 }
 
-void* Tristimulus::Query(size_t query)
+void* Tristimulus::Query(size_t /* query */)
 {
     return nullptr;
 }

@@ -15,6 +15,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 #include <common/error.hpp>
 #include <math/aabb.hpp>
 #include <common/query.hpp>

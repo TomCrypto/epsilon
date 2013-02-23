@@ -7,7 +7,7 @@
 **/
 
 /** @namespace Query
-  * @brief This namespace contains kernel object query definitions.
+  * @brief Kernel object query definitions.
 **/
 namespace Query
 {

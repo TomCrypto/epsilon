@@ -175,8 +175,10 @@ void kernel clmain(global float4 *render, /* Render buffer in XYZn format. */
     float a1 = rand(&prng) - 0.5f;
     float a2 = rand(&prng) - 0.5f;
 
-	float x = 1.0f - (float)(a1 + get_global_id(0) % params->width) / params->width;
+	float ratio = (float)params->width / params->height;
+	float x = (float)(a1 + get_global_id(0) % params->width) / params->width;
 	float y = (float)(a2 + get_global_id(0) / params->width) / params->height;
+	x = ((2 * x - 1) * ratio + 1) * 0.5f;
 
     /* Compute the standard camera ray. */
     float3 origin, direction;
@@ -223,7 +225,7 @@ void kernel clmain(global float4 *render, /* Render buffer in XYZn format. */
 		/* Otherwise, apply response curve. */
 		float w = 380 + 400 * wavelength;
 
-		float response = (tri.mat == 0) ? 1.0 : exp(-pow(w - tri.mat, 2.0f) * 0.001f);
+		float response = (tri.mat == 0) ? 1.0 : 0.45 + exp(-pow(w - tri.mat, 2.0f) * 0.001f) * 0.55;
 		response *= 0.8;
 
 		/* Get a random diffuse sample. */

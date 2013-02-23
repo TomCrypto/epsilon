@@ -19,6 +19,7 @@
   * This kernel object handles the following queries:
   * - \c Query::Progress
   * - \c Query::EstimatedTime
+  * - \c Query::ElapsedTime
 **/
 class Progress : public KernelObject
 {
@@ -29,12 +30,10 @@ class Progress : public KernelObject
         double ETC;
 
     public:
-		Progress(EngineParams& params) : KernelObject(params) { }
+		Progress(EngineParams& params);
 		~Progress() { }
 
-        bool IsActive();
-        void Initialize();
-        void Bind(cl_uint* slot);
+        void Bind(cl_uint* index);
         void Update(size_t index);
         void* Query(size_t query);
 };

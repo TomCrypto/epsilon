@@ -8,7 +8,7 @@
 
 /** @namespace Error
   *
-  * @brief Contains all possible error messages and error handling methods.
+  * @brief Error handling utilities.
 **/
 namespace Error
 {

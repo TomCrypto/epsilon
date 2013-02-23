@@ -25,12 +25,10 @@ class PRNG : public KernelObject
         /** @brief This is the device-side buffer containing the seed. **/
         cl::Buffer buffer;
     public:
-		PRNG(EngineParams& params) : KernelObject(params) { }
+		PRNG(EngineParams& params);
 		~PRNG() { }
 
-        bool IsActive();
-        void Initialize();
-        void Bind(cl_uint* slot);
+        void Bind(cl_uint* index);
         void Update(size_t index);
         void* Query(size_t query);
 };

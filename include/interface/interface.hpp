@@ -1,6 +1,5 @@
 #pragma once
 #include <common/common.hpp>
-#include <devices/devices.hpp>
 
 class Interface
 {
@@ -10,10 +9,8 @@ class Interface
 		double progress;
 		cl::Platform platform;
 		cl::Device device;
-		size_t platformIndex, deviceIndex;
-		size_t samples, width, height;
+		size_t passes, width, height;
 
-        DeviceList deviceList;
         void WriteLine(size_t line, std::string msg);
 		
         Interface();
@@ -21,12 +18,14 @@ class Interface
 
         void DisplayStatus(std::string message, bool error);
 		void DisplayProgress();
-		void DisplayTime(double etc);
-		void DisplayStatistics(double elapsed, double progress, uint32_t triangles);
-
-		void Finish();
+		void DisplayTime(double etc, double elapsed);
+		void DisplayStatistics(double elapsed,
+                               double estimated,
+                               double progress,
+                               uint32_t triangles);
 
 		void DrawFrame();
         void GetInput();
-		void Redraw();
+		void Refresh();
+		void Pause();
 };

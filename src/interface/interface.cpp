@@ -7,7 +7,7 @@
 #define LINE_OUTPUTFILE 9
 #define LINE_WIDTH      11
 #define LINE_HEIGHT     13
-#define LINE_SAMPLES    15
+#define LINE_PASSES     15
 #define LINE_STATUS     17
 #define LINE_ETC        19
 #define LINE_PROGRESS   21
@@ -22,11 +22,8 @@
 
 Interface::Interface()
 {
-    this->window = initscr();
-    this->DrawFrame();
+    window = initscr();
 
-
-    /* Init colors. */
     if (has_colors())
     {
         start_color();
@@ -37,6 +34,7 @@ Interface::Interface()
         init_pair(COLOR_STATUS, COLOR_GREEN, COLOR_BLACK);
     }
 
+	DrawFrame();
 }
 
 /* This method will write an arbitrary message to a particular line. The method
@@ -51,7 +49,7 @@ void Interface::WriteLine(size_t line, std::string msg)
         fmt += "...";
     }
 
-    size_t missing = ((line < 6) ? 41 : 57) - fmt.length();
+    size_t missing = ((line < 6) ? 44 : 60) - fmt.length();
     for (size_t t = 0; t < missing; ++t) fmt += " ";
 
     mvprintw(line, 18, fmt.c_str());
@@ -125,7 +123,7 @@ void Interface::DrawFrame()
     mvprintw(LINE_OUTPUTFILE, 2, "Engine Output");
     mvprintw(LINE_WIDTH     , 2, "Render  Width");
     mvprintw(LINE_HEIGHT    , 2, "Render Height");
-    mvprintw(LINE_SAMPLES   , 2, "Samples/Pixel");
+    mvprintw(LINE_PASSES    , 2, "Render Passes");
     mvprintw(LINE_STATUS    , 2, "Engine Status");
     mvprintw(LINE_ETC       , 2, "Completion In");
     mvprintw(LINE_PROGRESS  , 2, "Cur. Progress");
@@ -158,171 +156,218 @@ static inline std::string &trim(std::string &s) {
  * the ncurses blocking getch. */
 void Interface::GetInput()
 {
-    this->deviceList.Initialize();
-	std::vector<cl::Platform> platforms;
-	cl::Platform::get(&platforms);
+    size_t platformIndex, deviceIndex;
+    int key;
 
-    /* Don't want visual feedback for platform/device selection. */
+    /* Disable cursor/echo for device selection. */
     curs_set(0);
     noecho();
 
-    /* Get platform. */
-    this->platformIndex = 0;
-    DisplayStatus("Please select the OpenCL platform (up/down arrow keys).",
+    /* Obtain the list of platforms.. */
+    std::vector<cl::Platform> platforms;
+	cl::Platform::get(&platforms);
+
+    platformIndex = 0;
+    DisplayStatus("Please select the OpenCL platform (left/right arrow keys).",
                   false);
    
-    int input = 0; 
-    while (input != '\n')
+    key = 0; 
+    while (key != '\n')
     {
-        this->platform = platforms[this->platformIndex];
+        std::string name;
+
+        platform = platforms[platformIndex];
         size_t count = platforms.size();
-		std::string name;
-		platform.getInfo(CL_PLATFORM_NAME, &name);
+		
+        platform.getInfo(CL_PLATFORM_NAME, &name);
 
         attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
         WriteLine(LINE_PLATFORM, name);
-        mvprintw(LINE_PLATFORM, 66, "#%d out of %d",
-                 this->platformIndex + 1, count);
 
-        doupdate();
-        input = getch();
+        mvprintw(LINE_PLATFORM, 66, "#%d out of %d", platformIndex + 1, count);
 
-        if ((input == KEY_DOWN) || (this->platformIndex > 0)) this->platformIndex--;
-        if ((input == KEY_UP) || (this->platformIndex > count)) this->platformIndex++;
+        Refresh();
+        key = getch();
+
+        if ((key == KEY_LEFT) || (platformIndex > 0)) platformIndex--;
+        if ((key == KEY_RIGHT) || (platformIndex < count - 1)) platformIndex++;
     }
 
-    /* Get device. */
-    this->deviceIndex = 0;
+    deviceIndex = 0;
     DisplayStatus("Please select the OpenCL device.", false);
 
+    /* Get the list of devices... */
 	std::vector<cl::Device> devices;
-	this->platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+	platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
 
-    input = 0;
-    while (input != '\n')
+    key = 0;
+    while (key != '\n')
     {
-        this->device = devices[this->deviceIndex];
+        std::string name;
+
+        device = devices[deviceIndex];
         size_t count = devices.size();
-		std::string name;
-		device.getInfo(CL_DEVICE_NAME, &name);
+		
+        device.getInfo(CL_DEVICE_NAME, &name);
 		name = trim(name);
 
         attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
         WriteLine(LINE_DEVICE, name);
-        mvprintw(LINE_DEVICE, 66, "#%d out of %d",
-                 this->deviceIndex + 1, count);
 
-        doupdate();
-        input = getch();
+        mvprintw(LINE_DEVICE, 66, "#%d out of %d", deviceIndex + 1, count);
 
-        if ((input == KEY_DOWN) || (this->deviceIndex > 0)) this->deviceIndex--;
-        if ((input == KEY_UP) || (this->deviceIndex > count)) this->deviceIndex++;
+        Refresh();
+        key = getch();
+
+        if ((key == KEY_LEFT) || (deviceIndex > 0)) deviceIndex--;
+        if ((key == KEY_RIGHT) || (deviceIndex < count - 1)) deviceIndex++;
     }
 
-    /* We want visual feedback again. */
+    /* Re-enable visual feedback. */
     curs_set(1);
     echo();
 
-    char text[61];
+    char input[61];
 
     /* Get scene file. */
-    DisplayStatus("Please enter the scene file. (WIP: LEAVE EMPTY)", false);
+    DisplayStatus("Please enter the scene to render.", false);
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
     move(LINE_SCENEFILE, 18);
-    getnstr(text, 60);
-    this->source = text;
+    getnstr(input, 60);
+    this->source = input;
 
     /* Get output file. */
     DisplayStatus("Please enter the output file.", false);
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
     move(LINE_OUTPUTFILE, 18);
-    getnstr(text, 60);
-    this->output = text;
+    getnstr(input, 60);
+    this->output = input;
 
     /* Get render width and height. */
     DisplayStatus("Please enter the render width and height.", false);
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
     move(LINE_WIDTH, 18);
-    getnstr(text, 6);
-    this->width = atoi(text);
+    getnstr(input, 6);
+    this->width = atoi(input);
     move(LINE_HEIGHT, 18);
-    getnstr(text, 6);
-    this->height = atoi(text);
+    getnstr(input, 6);
+    this->height = atoi(input);
 
-    /* Get the sample per pixel count. */
-    DisplayStatus("Please enter the samples per pixel desired.", false);
+    /* Get the passes per pixel count. */
+    DisplayStatus("Please enter the passes (per pixel) desired.", false);
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-    move(LINE_SAMPLES, 18);
-    getnstr(text, 8);
-    this->samples = atoi(text);
+    move(LINE_PASSES, 18);
+    getnstr(input, 8);
+    this->passes = atoi(input);
 
     /* We're done with input. */
     curs_set(0);
     noecho();
 
     /* Do some basic error checking. */
-    size_t check = this->width * this->height;
-    if ((this->samples == 0) || ((check & (check - 1)) != 0))
-    {
-        throw std::runtime_error("Invalid parameters provided.");
-    }
+    if (passes == 0) throw std::runtime_error("Invalid parameters provided.");
 }
 
 void Interface::DisplayProgress()
 {
-	int prog = (int)(progress * 54);
-	int count = (prog > 27) ? prog + 6 : prog;
+    /* Handle the discontinuity here. */
+	size_t prog = (size_t)(progress * 54);
+	size_t count = (prog > 27) ? prog + 6 : prog;
 
 	attron(COLOR_PAIR(COLOR_TITLE1)); attron(A_BOLD);
 
-	for (int t = 0; t < count; ++t) mvaddch(LINE_PROGRESS, 18 + t, ACS_CKBOARD);
+    /* Progress bar drawn here. */
+	for (size_t t = 0; t < count; ++t)
+        mvaddch(LINE_PROGRESS, 18 + t, ACS_CKBOARD);
 
 	attron(COLOR_PAIR(COLOR_TITLE1)); attron(A_BOLD);
+
 	mvprintw(LINE_PROGRESS, 45, " %.3d%% ", (int)(progress * 100));
-	refresh();
-	doupdate();
+
+    Refresh();
 }
 
-void Interface::DisplayTime(double etc)
+void Interface::DisplayTime(double etc, double elapsed)
 {
 	attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-	if (etc < 0.0) WriteLine(LINE_ETC, "Indeterminate");
+	if (etc < 0.0) WriteLine(LINE_ETC, "Calculating...");
 	else
 	{
 		size_t t = (size_t)(etc - 0.5);
-		int hours = t / 3600;
-		int minutes = (t % 3600) / 60;
-		int seconds = t % 60;
-		std::string fmt = std::to_string(hours) + " hours, "
-						+ std::to_string(minutes) + " minutes, "
-						+ std::to_string(seconds) + " seconds.";
-		WriteLine(LINE_ETC, fmt);
+		int etc_h = t / 3600;
+		int etc_m = (t % 3600) / 60;
+		int etc_s = t % 60;
+
+		t = (size_t)(elapsed - 0.5);
+		int elapsed_h = t / 3600;
+		int elapsed_m = (t % 3600) / 60;
+		int elapsed_s = t % 60;
+
+		std::stringstream ss;
+		ss << "[";
+		ss << std::setfill('0') << std::setw(3);
+		ss << etc_h << ":";
+		ss << std::setfill('0') << std::setw(2);
+		ss << etc_m << ":";
+		ss << std::setfill('0') << std::setw(2);
+		ss << etc_s;
+		ss << " remaining] -- [";
+		ss << std::setfill('0') << std::setw(3);
+		ss << elapsed_h << ":";
+		ss << std::setfill('0') << std::setw(2);
+		ss << elapsed_m << ":";
+		ss << std::setfill('0') << std::setw(2);
+		ss << elapsed_s;
+		ss << " elapsed]";
+
+		WriteLine(LINE_ETC, ss.str());
 	}
 }
 
-void Interface::DisplayStatistics(double elapsed, double progress, uint32_t triangles)
+void Interface::DisplayStatistics(double elapsed,
+								  double estimated,
+								  double progress,
+								  uint32_t triangles)
 {
-	/* Total samples so far = progress * width * height. */
-	/* Total samples per second = total samples / second. */
-	double speed = this->samples * progress * this->width * this->height / elapsed;
-	speed /= (1000 * 1000);
+	this->progress = progress;
+	DisplayProgress();
 
-	std::stringstream ss;
-	ss.precision(3);
-	ss << "Triangles: " << triangles << " (" << speed << " million samples/second)";
+	/* Is there enough time data? */
+	if (elapsed < 1)
+	{
+		std::stringstream ss;
+		ss << "Triangles: " << triangles << ".";
+		attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
+		WriteLine(LINE_STATISTICS, ss.str());
+	}
+	else
+	{
+		/* Total samples so far = progress * width * height. */
+		/* Total samples per second = total samples / second. */
+		double pass_speed = this->passes * progress / elapsed;
+		double speed = this->passes * progress * this->width * this->height / elapsed;
+		speed /= (1000 * 1000);
 
-	WriteLine(LINE_STATISTICS, ss.str());
+		std::stringstream ss;
+		ss.precision(1);
+		ss << std::fixed;
+		ss << "Triangles: " << triangles << ", " << pass_speed << " passes/second [" << speed << " MPP/s]";
+		attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
+		WriteLine(LINE_STATISTICS, ss.str());
+	}
+
+	DisplayTime(estimated, elapsed);
 }
 
-void Interface::Redraw()
+void Interface::Refresh()
 {
-    int c = getch();
+    refresh();
+	doupdate();
 }
 
-void Interface::Finish()
+void Interface::Pause()
 {
-	attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-	WriteLine(LINE_ETC, "N/A");
+    getch();
 }
 
 Interface::~Interface()

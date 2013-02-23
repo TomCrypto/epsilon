@@ -1,22 +1,20 @@
 #include <misc/misc.hpp>
 
-bool Progress::IsActive() { return true; }
-
-void Progress::Initialize()
+Progress::Progress(EngineParams& params) : KernelObject(params)
 {
     return;
 }
 
-void Progress::Bind(cl_uint* slot)
+void Progress::Bind(cl_uint* /* index */)
 {
     return;
 }
 
-void Progress::Update(size_t index)
+void Progress::Update(size_t pass)
 {
-    this->progress = (double)index / (params.samples - 1);
+    this->progress = (double)pass / params.passes;
 
-    if (index == 0) this->startTime = time(nullptr);
+    if (pass == 0) this->startTime = time(nullptr);
 
     this->elapsed = difftime(time(nullptr), this->startTime);
     if (this->elapsed < 5)
@@ -25,7 +23,7 @@ void Progress::Update(size_t index)
     }
     else
     {
-        this->ETC = this->elapsed * (double)(params.samples - index) / index;
+        this->ETC = this->elapsed * (double)(params.passes - pass) / pass;
     }
 }
 

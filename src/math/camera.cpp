@@ -6,9 +6,7 @@ struct cl_data
     cl_float4 pos;
 };
 
-bool Camera::IsActive() { return false; }
-
-void Camera::Initialize()
+Camera::Camera(EngineParams& params) : KernelObject(params)
 {
     /* READ DATA HERE. */
     Vector cameraPos = Vector(0, 0, -14.9);
@@ -46,18 +44,18 @@ void Camera::Initialize()
     Error::Check(Error::CLIO, error);
 }
 
-void Camera::Bind(cl_uint* slot)
+void Camera::Bind(cl_uint* index)
 {
-    Error::Check(Error::Bind, params.kernel.setArg(*slot, this->buffer));
-	(*slot)++;
+    Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
+	(*index)++;
 }
 
-void Camera::Update(size_t index)
+void Camera::Update(size_t /* index */)
 {
     return;
 }
 
-void* Camera::Query(size_t query)
+void* Camera::Query(size_t /* query */)
 {
     return nullptr;
 }

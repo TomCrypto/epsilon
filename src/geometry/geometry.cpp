@@ -85,9 +85,7 @@ struct __attribute__ ((packed)) cl_node
 	cl_uint4 data; // start || nPrims || rightOffset
 };
 
-bool Geometry::IsActive() { return false; }
-
-void Geometry::Initialize()
+Geometry::Geometry(EngineParams& params) : KernelObject(params)
 {
     /* READ GEOMETRY DATA HERE. */
 
@@ -118,14 +116,14 @@ void Geometry::Initialize()
 			Vector p3 = Vector(triangle.p3[0], triangle.p3[1], triangle.p3[2]);
 
 			if (triangle.material == 3) this->list.push_back(new Triangle(p1, p2, p3, 660));
-			//if (triangle.material == 4) this->list.push_back(new Triangle(p1, p2, p3, 580));
+			if (triangle.material == 4) this->list.push_back(new Triangle(p1, p2, p3, 580));
 		}
     }
 
 	file.close();
     cl_int error;
 
-	fprintf(stderr, "There are %d triangles.\n", this->list.size());
+	fprintf(stderr, "There are %zu triangles.\n", this->list.size());
 
     /* END READ DATA. */
 
@@ -191,17 +189,17 @@ void Geometry::Initialize()
 	fprintf(stderr, "Uploaded scene data!\n");
 }
 
-void Geometry::Bind(cl_uint* slot)
+void Geometry::Bind(cl_uint* index)
 {
-    Error::Check(Error::Bind, params.kernel.setArg(*slot, this->triangles));
-    (*slot)++;
-	Error::Check(Error::Bind, params.kernel.setArg(*slot, this->nodes));
-    (*slot)++;
-    Error::Check(Error::Bind, params.kernel.setArg(*slot, this->sceneInfo));
-    (*slot)++;
+    Error::Check(Error::Bind, params.kernel.setArg(*index, this->triangles));
+    (*index)++;
+	Error::Check(Error::Bind, params.kernel.setArg(*index, this->nodes));
+    (*index)++;
+    Error::Check(Error::Bind, params.kernel.setArg(*index, this->sceneInfo));
+    (*index)++;
 }
 
-void Geometry::Update(size_t index)
+void Geometry::Update(size_t /* index */)
 {
     return;
 }

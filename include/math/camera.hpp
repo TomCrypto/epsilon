@@ -24,12 +24,10 @@ class Camera : public KernelObject
         cl::Buffer buffer;
 
     public:
-        Camera(EngineParams& params) : KernelObject(params) { }
+        Camera(EngineParams& params);
         ~Camera() { }
 
-        bool IsActive();
-        void Initialize();
-        void Bind(cl_uint* slot);
+        void Bind(cl_uint* index);
         void Update(size_t index);
         void* Query(size_t query);
 };

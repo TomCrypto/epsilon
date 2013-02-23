@@ -3,9 +3,7 @@
 /* Device-side representation. */
 struct cl_prng { cl_ulong4 seed; };
 
-bool PRNG::IsActive() { return true; }
-
-void PRNG::Initialize()
+PRNG::PRNG(EngineParams& params) : KernelObject(params)
 {
     cl_int error;
     this->buffer = cl::Buffer(params.context, CL_MEM_READ_ONLY,
@@ -15,13 +13,13 @@ void PRNG::Initialize()
     this->seed = 0;
 }
 
-void PRNG::Bind(cl_uint* slot)
+void PRNG::Bind(cl_uint* index)
 {
-    Error::Check(Error::Bind, params.kernel.setArg(*slot, this->buffer));
-	(*slot)++;
+    Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
+	(*index)++;
 }
 
-void PRNG::Update(size_t index)
+void PRNG::Update(size_t /* index */)
 {
     cl_int error = params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
                                                    sizeof(uint64_t),
@@ -30,7 +28,7 @@ void PRNG::Update(size_t index)
     this->seed++;
 }
 
-void* PRNG::Query(size_t query)
+void* PRNG::Query(size_t /* query */)
 {
     return nullptr;
 }

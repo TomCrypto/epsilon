@@ -14,7 +14,7 @@
   * @brief General engine parameters
   *
   * This contains runtime parameters such as platform/device information, and
-  * user-provided options such as render width and height.
+  * user-provided options such as render width, height, passes, and so on.
 **/
 struct EngineParams
 {
@@ -38,26 +38,30 @@ struct EngineParams
     size_t width;
     /** @brief The render height, in pixels. **/
     size_t height;
-    /** @brief The number of samples per pixel. **/
-    size_t samples;
+    /** @brief The number of render passes (per pixel). **/
+    size_t passes;
 };
 
 /** @class KernelObject
   * @brief Uniform kernel argument interface
   * 
   * Each kernel object manages its own memory (both host-side and device-side)
-  * and binds itself to a particular kernel argument slot, provided by the
+  * and binds itself to any number of kernel argument slots, provided by the
   * engine. Inputs to kernel objects come in two forms:
   * - Scene data, where the kernel object requests the contents of a particular
   *   file located inside the selected scene's directory (such as geometry data
   *   or material definitions). The object loads this data itself.
   * - Engine parameters, which are always passed to the kernel object even if
   *   not specifically required. This contains parameters selected by the user
-  *   at runtime, such as render width and height, or quality (samples/pixel).
+  *   at runtime, such as render width and height, or render passes.
   *
-  * A kernel object can be passive, meaning it is responsible for storing data
-  * and uploading it to the device once, or it can be active, meaning it will
-  * be able to update itself and upload new data to the device as needed.
+  * All kernel objects will be notified and allowed to perform tasks whenever
+  * the renderer is about to begin a new render pass, such as communicating
+  * with the device, or even saving/reading from a file.
+  *
+  * All kernel objects can be queried for information by the engine. This
+  * allows the renderer to, in turn, report information to the interface
+  * for display. See the \c KernelObject::Query method for details.
 **/
 class KernelObject
 {
@@ -88,38 +92,28 @@ class KernelObject
     public:
         /** @brief Constructs the kernel object and passes engine parameters.
           * @param params The engine parameters.
-          * @note No initialization should be performed in the constructor.
+          * @note All required resources are allocated here.
         **/
         KernelObject(EngineParams& params) : params(params) { }
 
-        /** @brief Returns whether the kernel object is active.
-          * @return If this returns \c true, then the kernel object's \c Update
-          *         method will be called before each kernel invocation.
-        **/
-        virtual bool IsActive() = 0;
-
-        /** @brief Initializes the kernel object.
-        **/
-        virtual void Initialize() = 0;
-
         /** @brief Binds the kernel object to a kernel.
-          * @param slot A running pointer to the next available slot. The
-          *             kernel object is to use up as many slots starting
-          *             from this one, and increment this pointer for the
-          *             next kernel object.
+          * @param index A pointer to a running variable indicating the next
+          *              available slot. The kernel object is to use up as
+          *              many slots as it needs starting from this one, and
+          *              increment the running variable for the next kernel
+          *              object.
         **/
-        virtual void Bind(cl_uint* slot) = 0;
+        virtual void Bind(cl_uint* index) = 0;
 
         /** @brief Updates the kernel object.
-          * @param index This indicates how many previous kernel invocations
-          *              have occurred (e.g. if this contains 3, then this
-          *              method has already been called three times).
+          * @param pass This indicates the pass the renderer is currently
+          *             working on (this is zero-based, first pass is zero).
           * @note In total, this method will be called \c params.samples times.
         **/
-        virtual void Update(size_t index) = 0;
+        virtual void Update(size_t pass) = 0;
 
-        /** @brief Returns object-specific information.
-          * @param query A value identifying which information is required.
+        /** @brief Queries the kernel object for information.
+          * @param query An integer identifying the required information.
           * @returns A pointer to the requested information. The format of
           *          this information may vary and is assumed to be known
           *          to the caller. If the information is not found, returns
@@ -129,7 +123,7 @@ class KernelObject
         **/
         virtual void* Query(size_t query) = 0;
 
-        /** @brief Frees the kernel object.
+        /** @brief Destroys the kernel object and frees all resources.
         **/
         virtual ~KernelObject() { }
 };

@@ -111,12 +111,10 @@ class DeviceParams : public KernelObject
         cl::Buffer buffer;
 
     public:
-        DeviceParams(EngineParams& params) : KernelObject(params) { }
+        DeviceParams(EngineParams& params);
         ~DeviceParams() { }
 
-        bool IsActive();
-        void Initialize();
-        void Bind(cl_uint* slot);
+        void Bind(cl_uint* index);
         void Update(size_t index);
         void* Query(size_t query);
 };
@@ -148,12 +146,10 @@ class PixelBuffer : public KernelObject
 
         void WriteToFile(std::string path);
     public:
-        PixelBuffer(EngineParams& params) : KernelObject(params) { }
+        PixelBuffer(EngineParams& params);
         ~PixelBuffer();
 
-        bool IsActive();
-        void Initialize();
-        void Bind(cl_uint* slot);
+        void Bind(cl_uint* index);
         void Update(size_t index);
         void* Query(size_t query);
 };
@@ -172,12 +168,10 @@ class Tristimulus : public KernelObject
     private:
         cl::Image2D buffer;
     public:
-        Tristimulus(EngineParams& params) : KernelObject(params) { }
+        Tristimulus(EngineParams& params);
         ~Tristimulus() { }
 
-        bool IsActive();
-        void Initialize();
-        void Bind(cl_uint* slot);
+        void Bind(cl_uint* index);
         void Update(size_t index);
         void* Query(size_t query);
 };
