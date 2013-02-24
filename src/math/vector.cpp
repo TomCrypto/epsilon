@@ -1,11 +1,5 @@
 #include <math/vector.hpp>
 
-std::ostream& operator << (std::ostream& out, const Vector& v)
-{
-    out << "(" << v.x << ", " << v.y << ", " << v.z << ")";
-    return out;
-}
-
 float dot(const Vector& a, const Vector& b)
 {
     return a.x * b.x

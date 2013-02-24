@@ -1,6 +1,5 @@
 #pragma once
 
-#include <common/common.hpp>
 #include <engine/architecture.hpp>
 
 #include <math/prng.hpp>
@@ -10,13 +9,24 @@
 #include <geometry/geometry.hpp>
 
 /** @file renderer.hpp
-  * @brief Epsilon rendering engine.
+  * @brief ɛpsilon rendering engine.
   *
   * Thie file contains the renderer.
+  *
+  * \todo Clean up interface code (main.cpp contract already done).
+  * \todo Create geometry & camera format (i.e. string parsing galore).
+  * \todo Improve time computations (use a millisecond source).
+  * \todo Clean up geometry (BVH building, specifically).
+  * \todo When all of the above works perfectly, implement material system &
+  *       optimize/document the kernel code.
+  *
+  * \todo [Minor annoyance] Find a portable way to print size_t's.
+  * \todo [Low priority] Comment the source files.
+  *
 ***/
 
 /** @class Renderer
-  * @brief The renderer.
+  * @brief Engine implementation.
   *
   *
 **/
@@ -32,9 +42,9 @@ class Renderer
 
     public:
         /** @brief Initializes the renderer.
-          * @param params The engine parameters.
+          * @param width The render width, in pixels.
           * @param height The render height, in pixels.
-          * @param samples The number of samples per pixel.
+          * @param passes The number of render passes (per pixel).
           * @param platform The OpenCL platform to use for rendering.
           * @param device The OpenCL device to use for rendering.
           * @param source The engine source (scene directory).

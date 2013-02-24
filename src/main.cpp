@@ -1,52 +1,87 @@
-#include <iostream>
-#include <cstdio>
 #include <interface/interface.hpp>
 #include <engine/renderer.hpp>
-#include <unistd.h>
 
-using namespace std;
+#include <unistd.h>
+#include <cstdio>
+
+/* This function will query the statistics from the renderer. */
+void QueryStatistics(Renderer* renderer, Statistics& statistics)
+{
+    statistics.progress  = *(double*)renderer->Query(Query::Progress);
+    statistics.estimated = *(double*)renderer->Query(Query::EstimatedTime);
+    statistics.elapsed   = *(double*)renderer->Query(Query::ElapsedTime);
+    statistics.triangles = *(uint32_t*)renderer->Query(Query::TriangleCount);
+}
 
 int main(/* int argc, char* argv[] */)
 {
-	Interface* interface = new Interface();
+    /* Create an error log to stderr. */
+    FILE* log = fopen("error.log", "w");
+    dup2(fileno(log), 2);
+
+    fprintf(stderr, "--- BEGIN LOG ---\n\n");
+    fprintf(stderr, "[+] Initializing interface.\n");
+    Interface* interface = new Interface();
+    Renderer* renderer = nullptr;
 
 	try
 	{
+        fprintf(stderr, "[+] Waiting for user input.\n");
 		interface->GetInput();
 
 		interface->DisplayStatus("Preparing render...", false);
 		interface->Refresh();
 
-		Renderer* renderer = new Renderer(interface->width, interface->height, interface->passes,
-								 	      interface->platform, interface->device, interface->source, interface->output);
+        fprintf(stderr, "[+] Initializing renderer.\n\n");
+		renderer = new Renderer(interface->width,
+                                interface->height,
+                                interface->passes,
+								interface->platform,
+                                interface->device,
+                                interface->source,
+                                interface->output);
 
 		interface->DisplayStatus("Rendering...", false);
 
-		double progress, etc, elapsed;
-		uint32_t triangles;
-		while (!renderer->Execute())
-		{
-			progress = *(double*)renderer->Query(Query::Progress);
-			etc = *(double*)renderer->Query(Query::EstimatedTime);
-			elapsed = *(double*)renderer->Query(Query::ElapsedTime);
-			triangles = *(uint32_t*)renderer->Query(Query::TriangleCount);
-			
-			interface->DisplayStatistics(elapsed, etc, progress, triangles);
-		}
+        fprintf(stderr, "\n[+] Starting render passes.\n\n");
 
-		interface->DisplayStatistics(elapsed, 0.0, 1.0, triangles);
-		interface->DisplayStatus("Finalizing render...", false);
-		interface->Refresh();
+        Statistics statistics;
+        QueryStatistics(renderer, statistics);
+        interface->GiveStatistics(statistics);
+		
+        do
+		{
+            QueryStatistics(renderer, statistics);
+            interface->GiveStatistics(statistics);
+		}
+        while (!renderer->Execute());
+
+        QueryStatistics(renderer, statistics);
+        interface->GiveStatistics(statistics);
+
+        interface->DisplayStatus("Finalizing render...", false);
+        fprintf(stderr, "[+] Finalizing render.\n\n");
+
 		delete renderer;
+
+        fprintf(stderr, "\n[+] Renderer successfully terminated.\n");
 		interface->DisplayStatus("Render complete.", false);
 	}
-	catch (exception& e)
+	catch (std::exception& e)
 	{
+        /* Print error to screen and into log. */
 		interface->DisplayStatus(e.what(), true);
+        fprintf(stderr, "\n[EXCEPTION RAISED] ");
+        fprintf(stderr, "-> %s\n\n", e.what());
+        fprintf(stderr, "[+] Bailing out!\n");
+        delete renderer;
 	}
 
 	interface->Pause();
 	delete interface;
 
-	return EXIT_SUCCESS;
+    /* Close the log, and we. are. done! */
+    fprintf(stderr, "\n--- END LOG ---\n");
+    fclose(log);
+    return 0;
 }

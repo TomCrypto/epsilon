@@ -1,20 +1,17 @@
 #pragma once
 
-#include <common/common.hpp>
 #include <engine/architecture.hpp>
 
 /** @file misc.hpp
-  * @brief Miscellaneous engine tools
+  * @brief Miscellaneous engine tools.
 **/
 
 /** @class Progress
-  * @brief Time-based renderer metrics
+  * @brief Time-based renderer metrics.
 
   * This kernel object does not actually bind anything to the device but simply
   * provides metrics on the renderer's current progress, and calculates the ETC
   * (estimated time to completion) of the renderer.
-  *
-  * It is by definition an active kernel object.
   *
   * This kernel object handles the following queries:
   * - \c Query::Progress

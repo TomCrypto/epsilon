@@ -8,6 +8,8 @@ struct cl_data
 
 Camera::Camera(EngineParams& params) : KernelObject(params)
 {
+    fprintf(stderr, "Initializing <Camera>...");
+
     /* READ DATA HERE. */
     Vector cameraPos = Vector(0, 0, -14.9);
     Vector dir = Vector(0, 0, 1);
@@ -42,10 +44,13 @@ Camera::Camera(EngineParams& params) : KernelObject(params)
     error = params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
                                             sizeof(cl_data), &data);
     Error::Check(Error::CLIO, error);
+
+    fprintf(stderr, " complete!\n\n");
 }
 
 void Camera::Bind(cl_uint* index)
 {
+    fprintf(stderr, "Binding <buffer@Camera> to slot %u.\n", *index);
     Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
 	(*index)++;
 }

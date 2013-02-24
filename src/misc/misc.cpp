@@ -2,19 +2,20 @@
 
 Progress::Progress(EngineParams& params) : KernelObject(params)
 {
-    return;
+    this->progress = 0;
+    this->elapsed = 0.0;
+    this->ETC = -1.0;
 }
 
 void Progress::Bind(cl_uint* /* index */)
 {
+    this->startTime = time(nullptr);
     return;
 }
 
 void Progress::Update(size_t pass)
 {
-    this->progress = (double)pass / params.passes;
-
-    if (pass == 0) this->startTime = time(nullptr);
+    this->progress = (double)(pass + 1) / params.passes;
 
     this->elapsed = difftime(time(nullptr), this->startTime);
     if (this->elapsed < 5)
@@ -23,7 +24,8 @@ void Progress::Update(size_t pass)
     }
     else
     {
-        this->ETC = this->elapsed * (double)(params.passes - pass) / pass;
+        double position = (double)(params.passes - pass - 1) / (pass + 1);
+        this->ETC = this->elapsed * position;
     }
 }
 

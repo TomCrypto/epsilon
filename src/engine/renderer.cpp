@@ -13,6 +13,8 @@ Renderer::Renderer(size_t width, size_t height, size_t passes,
 	params.output   = output;
 	currentPass = 0;
 
+    fprintf(stderr, "Initializing OpenCL context.\n");
+
 	/* For some reason, cl::Context requires a vector.. */
     std::vector<cl::Device> devices(&device, &device + 1);
 
@@ -25,6 +27,8 @@ Renderer::Renderer(size_t width, size_t height, size_t passes,
                                     /* props. */ 0, &error);
     Error::Check(Error::Queue, error);
 
+    fprintf(stderr, "Building OpenCL kernel.\n");
+
 	/* This is a cheap trick to load programs. */
     const char* src = "#include <cl/epsilon.cl>";
 
@@ -36,22 +40,20 @@ Renderer::Renderer(size_t width, size_t height, size_t passes,
 
     cl_int build_error = params.program.build(devices, "-I cl/");
 
-    if (build_error != CL_SUCCESS)
-    {
-        std::string log;
-        error = params.program.getBuildInfo(params.device,
-                                            CL_PROGRAM_BUILD_LOG, &log);
-        Error::Check(Error::BuildLog, error);
-        std::ofstream logfile("clc.log");
-        logfile << log;
-        logfile.close();
+    std::string log;
+    error = params.program.getBuildInfo(params.device, CL_PROGRAM_BUILD_LOG,
+                                        &log);
+    Error::Check(Error::BuildLog, error);
 
-        /* Only need this if the build fails. */
-        Error::Check(Error::Build, build_error);
-    }
+    fprintf(stderr, "CLC build log follows:\n\n");
+    fprintf(stderr, "%s\n\n", log.c_str());
+
+    Error::Check(Error::Build, build_error);
 
     params.kernel = cl::Kernel(params.program, "clmain", &error);
     Error::Check(Error::Kernel, error);
+
+    fprintf(stderr, "Loading all kernel objects.\n\n");
 
     /* Add all kernel objects here, in order. */
     objects.push_back(new PixelBuffer (params));
@@ -68,6 +70,7 @@ Renderer::Renderer(size_t width, size_t height, size_t passes,
 
 Renderer::~Renderer()
 {
+    fprintf(stderr, "Freeing all kernel objects.\n");
     for (size_t t = 0; t < objects.size(); ++t) delete objects[t];
 }
 
@@ -75,9 +78,9 @@ bool Renderer::Execute()
 {
     /* Guard to prevent doing redundant passes. */
 	if (currentPass == params.passes) return true;
+    bool info = (currentPass == 0);
 
-    for (size_t t = 0; t < objects.size(); ++t)
-		objects[t]->Update(currentPass);
+    fprintf(stderr, "Executing pass %d.\n", (int)currentPass);
     
 	cl_int error;
 	size_t local, global = params.width * params.height;
@@ -87,18 +90,35 @@ bool Renderer::Execute()
 	Error::Check(Error::DeviceQuery, error);
 	size_t offset = 0;
 
+    if (info)
+    {
+        unsigned long loc = local; /* Damn you, size_t! */
+        fprintf(stderr, "--> Local work group size reported: %lu.\n", loc);
+        fprintf(stderr, "--> Initiating iterative problem reduction.\n");
+    }
+
 	while (global != 0)
 	{
-		size_t slice  = global - global % local;
-		
-		cl::NDRange localSize(local), globalSize(slice);
-		cl::NDRange offsetRange(offset);
+        size_t reduced = global % local;
+		size_t slice = global - reduced;
+        if (info)
+        {
+            unsigned long glo = global, red = reduced;
+            fprintf(stderr, "-----> Reducing %lu to %lu.\n", glo, red);
+        }
 
-		error = params.queue.enqueueNDRangeKernel(params.kernel,
-					    						  offsetRange,
-												  globalSize,
-												  localSize);
-		Error::Check(Error::Execute, error);
+        if (slice >= local)
+        {
+            cl::NDRange localSize(local), globalSize(slice);
+            cl::NDRange offsetRange(offset);
+            
+            if (info) fprintf(stderr, "-----> Launching kernel.\n");
+		    error = params.queue.enqueueNDRangeKernel(params.kernel,
+			    		    						  offsetRange,
+				    								  globalSize,
+					    							  localSize);
+            Error::Check(Error::Execute, error);
+        }
 
 		global = global % local;
 		offset += slice;
@@ -107,6 +127,13 @@ bool Renderer::Execute()
 
 	this->params.queue.finish();
 
+    if (info) fprintf(stderr, "--> Updating all kernel objects.\n");
+
+    for (size_t t = 0; t < objects.size(); ++t)
+		objects[t]->Update(currentPass);
+
+
+    fprintf(stderr, "Pass complete.\n\n");
     return (++currentPass == params.passes);
 }
 

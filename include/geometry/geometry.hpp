@@ -1,10 +1,11 @@
 #pragma once
 
-#include <common/common.hpp>
 #include <engine/architecture.hpp>
 
+#include <math/aabb.hpp>
+
 /** @file geometry.hpp
-  * @brief Geometry handling
+  * @brief Geometry handling.
 **/
 
 
@@ -27,7 +28,7 @@ struct cl_triangle
 
 
 /** @class Triangle
-  * @brief Device-side triangle
+  * @brief Device-side triangle.
   *
   * This represents a triangle. Note that the actual triangle data sent to the
   * device is a subset of what this class contains, since not all information
@@ -65,7 +66,7 @@ struct BVHFlatNode
 };
 
 /** @class Geometry
-  * @brief Scene-wide geometry
+  * @brief Scene-wide geometry.
   *
   * This kernel object manages the list of triangles in the scene to render.
   * 

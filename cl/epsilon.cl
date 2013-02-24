@@ -178,7 +178,7 @@ void kernel clmain(global float4 *render, /* Render buffer in XYZn format. */
 	float ratio = (float)params->width / params->height;
 	float x = (float)(a1 + get_global_id(0) % params->width) / params->width;
 	float y = (float)(a2 + get_global_id(0) / params->width) / params->height;
-	x = ((2 * x - 1) * ratio + 1) * 0.5f;
+	x = 0.5f * (1 + ratio) - x * ratio;
 
     /* Compute the standard camera ray. */
     float3 origin, direction;

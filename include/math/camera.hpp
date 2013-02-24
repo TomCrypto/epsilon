@@ -1,20 +1,17 @@
 #pragma once
 
-/* This file implements a camera manager, which allows perspective projection *
- * of the scene, and includes features such as field of view, depth of field, *
- * etc... Most of the computations are done host-side and sent to the device. */
-
-#include <common/common.hpp>
 #include <engine/architecture.hpp>
+#include <math/vector.hpp>
 
 /** @file camera.hpp
-  * @brief Camera manipulation
+  * @brief Camera manipulation.
 **/
 
 /** @class Camera
-  * @brief Device-side camera
+  * @brief Device-side camera.
   *
-  * This is a simple implementation of a camera.
+  * This is a simple implementation of a camera, with position/orientation,
+  * field of view. Uses linear algebra to project a focal plane.
   *
   * This kernel object does not handle any queries.
 **/

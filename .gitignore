@@ -22,6 +22,7 @@ doc/
 # Swap and tmp files
 *.cpp~
 *.hpp~
+*.cl~
 *.swp
 
 # Renders

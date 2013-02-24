@@ -1,6 +1,5 @@
 #pragma once
 
-#include <common/common.hpp>
 #include <engine/architecture.hpp>
 
 /** @file prng.hpp
@@ -11,8 +10,8 @@
   * @brief Pseudorandom number generator.
   *
   * This is a lightweight, cryptographic-grade pseudorandom number generator,
-  * wrapped up as a kernel object. It is active, as it uploads a new seed to
-  * the device at every kernel invocation.
+  * wrapped up as a kernel object. It uploads a new seed to the device at
+  * every render pass (otherwise each pass would yield the same result).
   *
   * This kernel object handles no queries.
 **/

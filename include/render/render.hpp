@@ -1,14 +1,14 @@
 #pragma once
 
-#include <common/common.hpp>
 #include <engine/architecture.hpp>
+#include <render/spectral.hpp>
+#include <math/vector.hpp>
 
 /** @file render.hpp
-  * @brief Pixel buffer manipulation
+  * @brief Color-related kernel objects.
   *
-  * This file contains the definition of a kernel object responsible for
-  * managing a pixel buffer, used by the renderer to draw and accumulate
-  * colors into.
+  * This file contains kernel objects responsible for handling colors in
+  * general.
 **/
 
 /* This is pixel, which contains a three-color tristimulus value of any color *
@@ -96,12 +96,10 @@ struct Pixel
 
 
 /** @class DeviceParams
-  * @brief Device-side engine params
+  * @brief Device-side engine params.
   *
   * This kernel object uploads relevant engine parameters to the kernel, this
   * includes render width and height. This is required for the kernel to work.
-  *
-  * It is not active, since it uploads constant data.
   *
   * This kernel object handles no queries.
 **/
@@ -120,12 +118,12 @@ class DeviceParams : public KernelObject
 };
 
 /** @class PixelBuffer
-  * @brief Device-side pixel buffer
+  * @brief Device-side pixel buffer.
   *
   * This kernel object is responsible for managing a pixel buffer, which is a
   * raster array of pixels which the kernel can read from and write to. This
-  * kernel object is passive, given that it only performs work during its
-  * initialization and cleanup (to save the final pixel buffer to file).
+  * kernel object is actually responsible for saving the final render to
+  * the output file, and does so upon destruction.
   *
   * This kernel object handles no queries.
 **/
@@ -156,7 +154,7 @@ class PixelBuffer : public KernelObject
 
 
 /** @class Tristimulus
-  * @brief Color-matching curve
+  * @brief Color-matching curve.
   *
   * This kernel object just uploads a color-matching curve to the device, to
   * map optical wavelengths to their tristimulus "perceptual" XYZ values.

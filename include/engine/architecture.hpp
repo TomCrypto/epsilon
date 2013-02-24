@@ -1,6 +1,11 @@
 #pragma once
 
-#include <common/common.hpp>
+#include <common/error.hpp>
+#include <common/query.hpp>
+
+#include <CL/cl.hpp>
+#include <cstddef>
+#include <fstream>
 
 /** @file architecture.hpp
   * @brief Engine architecture definitions.
@@ -11,7 +16,7 @@
 **/
 
 /** @struct EngineParams
-  * @brief General engine parameters
+  * @brief General engine parameters.
   *
   * This contains runtime parameters such as platform/device information, and
   * user-provided options such as render width, height, passes, and so on.
@@ -43,7 +48,7 @@ struct EngineParams
 };
 
 /** @class KernelObject
-  * @brief Uniform kernel argument interface
+  * @brief Uniform kernel argument interface.
   * 
   * Each kernel object manages its own memory (both host-side and device-side)
   * and binds itself to any number of kernel argument slots, provided by the
@@ -74,13 +79,14 @@ class KernelObject
           * @param data A streamable object containing the scene data.
           * @note If the scene data cannot be found, this will throw an
           *       exception, and the kernel object should probably die
-          *       and cause the engine to fail if it cannot recover.
+          *       and cause the renderer to fail if it cannot recover.
         **/
-        void GetData(std::string id, std::ifstream& data)
+        void GetData(std::string id, std::fstream& data)
         {
             try
             {
-                data.open(params.source + "/" + id, std::ifstream::binary);
+                std::string path = params.source + "/" + id;
+                data.open(path, std::fstream::in | std::fstream::binary);
                 if (!data.is_open()) Error::Check(Error::IO, 0, true);
             }
             catch (...)
@@ -102,13 +108,15 @@ class KernelObject
           *              many slots as it needs starting from this one, and
           *              increment the running variable for the next kernel
           *              object.
+          * @note The kernel is provided by the renderer in the \c EngineParams
+          *       structure passed upon initialization.
         **/
         virtual void Bind(cl_uint* index) = 0;
 
         /** @brief Updates the kernel object.
-          * @param pass This indicates the pass the renderer is currently
-          *             working on (this is zero-based, first pass is zero).
-          * @note In total, this method will be called \c params.samples times.
+          * @param pass This indicates the pass the renderer has just finished.
+          *             Note this is zero-based, first pass is denoted zero.
+          * @note In total, this method will be called \c params.passes times.
         **/
         virtual void Update(size_t pass) = 0;
 

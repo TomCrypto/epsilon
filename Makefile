@@ -8,8 +8,8 @@ HEADERS = $(shell find include/ -name '*.hpp')
 
            # The OpenCL C++ wrapper isn't fully 1.2 yet
 CPPFLAGS = -DCL_USE_DEPRECATED_OPENCL_1_1_APIS -Wno-cpp \
-           -O2 -std=c++11 -march=native \
-           -Wall -Wextra
+           -O3 -std=c++11 -march=native \
+           -Wall -Wextra -pedantic
 
 LDLIBS = -lOpenCL -lncurses
 

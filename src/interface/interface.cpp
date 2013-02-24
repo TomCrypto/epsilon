@@ -69,6 +69,9 @@ void Interface::DisplayStatus(std::string message, bool error)
 		curs_set(0);
 	    noecho();
 	}
+
+    refresh();
+    doupdate();
 }
 
 /* Draws the constant elements of the interface once and for all. This includes
@@ -290,9 +293,10 @@ void Interface::DisplayProgress()
 void Interface::DisplayTime(double etc, double elapsed)
 {
 	attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-	if (etc < 0.0) WriteLine(LINE_ETC, "Calculating...");
+	if ((etc < 0.0) && (progress != 1.0)) WriteLine(LINE_ETC, "Calculating...");
 	else
 	{
+		if (progress == 1.0) etc = 0.0;
 		size_t t = (size_t)(etc - 0.5);
 		int etc_h = t / 3600;
 		int etc_m = (t % 3600) / 60;
@@ -304,14 +308,14 @@ void Interface::DisplayTime(double etc, double elapsed)
 		int elapsed_s = t % 60;
 
 		std::stringstream ss;
-		ss << "[";
+		ss << "         [";
 		ss << std::setfill('0') << std::setw(3);
 		ss << etc_h << ":";
 		ss << std::setfill('0') << std::setw(2);
 		ss << etc_m << ":";
 		ss << std::setfill('0') << std::setw(2);
 		ss << etc_s;
-		ss << " remaining] -- [";
+		ss << " remains]    [";
 		ss << std::setfill('0') << std::setw(3);
 		ss << elapsed_h << ":";
 		ss << std::setfill('0') << std::setw(2);
@@ -324,19 +328,16 @@ void Interface::DisplayTime(double etc, double elapsed)
 	}
 }
 
-void Interface::DisplayStatistics(double elapsed,
-								  double estimated,
-								  double progress,
-								  uint32_t triangles)
+void Interface::GiveStatistics(Statistics statistics)
 {
-	this->progress = progress;
+	this->progress = statistics.progress;
 	DisplayProgress();
 
 	/* Is there enough time data? */
-	if (elapsed < 1)
+	if (statistics.elapsed < 1)
 	{
 		std::stringstream ss;
-		ss << "Triangles: " << triangles << ".";
+		ss << "Triangles: " << statistics.triangles << ", no statistics available.";
 		attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
 		WriteLine(LINE_STATISTICS, ss.str());
 	}
@@ -344,19 +345,21 @@ void Interface::DisplayStatistics(double elapsed,
 	{
 		/* Total samples so far = progress * width * height. */
 		/* Total samples per second = total samples / second. */
-		double pass_speed = this->passes * progress / elapsed;
-		double speed = this->passes * progress * this->width * this->height / elapsed;
+		double pass_speed = this->passes * statistics.progress / statistics.elapsed;
+		double speed = this->passes * statistics.progress * this->width * this->height / statistics.elapsed;
 		speed /= (1000 * 1000);
 
 		std::stringstream ss;
 		ss.precision(1);
 		ss << std::fixed;
-		ss << "Triangles: " << triangles << ", " << pass_speed << " passes/second [" << speed << " MPP/s]";
+		ss << "Triangles: " << statistics.triangles << ", " << pass_speed << " passes/second [" << speed << " MPP/s]";
 		attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
 		WriteLine(LINE_STATISTICS, ss.str());
 	}
 
-	DisplayTime(estimated, elapsed);
+	DisplayTime(statistics.estimated, statistics.elapsed);
+    refresh();
+    doupdate();
 }
 
 void Interface::Refresh()

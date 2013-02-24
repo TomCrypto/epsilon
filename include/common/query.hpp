@@ -1,9 +1,9 @@
 #pragma once
 
-#include <common/common.hpp>
+#include <cstddef>
 
 /** @file query.hpp
-  * @brief Contains kernel object query definitions.
+  * @brief Query definitions.
 **/
 
 /** @namespace Query

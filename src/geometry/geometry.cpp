@@ -87,6 +87,8 @@ struct __attribute__ ((packed)) cl_node
 
 Geometry::Geometry(EngineParams& params) : KernelObject(params)
 {
+    fprintf(stderr, "Initializing <Geometry>.\n");
+
     /* READ GEOMETRY DATA HERE. */
 
 	this->list.push_back(new Triangle(Vector(-5, -5, -20), Vector(+5, -5, -20), Vector(+5, -5, +5), 0));
@@ -98,8 +100,8 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 	this->list.push_back(new Triangle(Vector(-5, -5, +5), Vector(+5, -5, +5), Vector(+5, +5, +5), 0));
 	this->list.push_back(new Triangle(Vector(-5, -5, +5), Vector(+5, +5, +5), Vector(-5, +5, +5), 0));
 
-	std::fstream file;
-    file.open(params.source, std::ios::in | std::ios::binary);
+    std::fstream file;
+    GetData("geometry", file);
 
 	/* Read every scene entity in the file. */
     EntityHeader header;
@@ -123,14 +125,14 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 	file.close();
     cl_int error;
 
-	fprintf(stderr, "There are %zu triangles.\n", this->list.size());
+	fprintf(stderr, "There are %u triangles.\n", (uint32_t)this->list.size());
 
     /* END READ DATA. */
 
 	fprintf(stderr, "Now building BVH...\n");
 
 	/* BVH INITIALIZATION HERE. */
-	this->leafSize = 4;
+	this->leafSize = 2;
 	this->nNodes = 0;
 	this->nLeafs = 0;
 	this->flatTree = nullptr;
@@ -187,14 +189,18 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 	Error::Check(Error::Memory, error);
 
 	fprintf(stderr, "Uploaded scene data!\n");
+    fprintf(stderr, "Initialization complete.\n\n");
 }
 
 void Geometry::Bind(cl_uint* index)
 {
+    fprintf(stderr, "Binding <triangles@Geometry> to index %u.\n", *index);
     Error::Check(Error::Bind, params.kernel.setArg(*index, this->triangles));
     (*index)++;
+    fprintf(stderr, "Binding <nodes@Geometry> to index %u.\n", *index);
 	Error::Check(Error::Bind, params.kernel.setArg(*index, this->nodes));
     (*index)++;
+    fprintf(stderr, "Binding <sceneInfo@Geometry> to index %u.\n", *index);
     Error::Check(Error::Bind, params.kernel.setArg(*index, this->sceneInfo));
     (*index)++;
 }
