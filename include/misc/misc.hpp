@@ -21,10 +21,10 @@
 class Progress : public KernelObject
 {
     private:
-        time_t startTime;
+        double startTime;
 		double elapsed;
         double progress;
-        double ETC;
+        double remains;
 
     public:
 		Progress(EngineParams& params);

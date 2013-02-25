@@ -1,14 +1,11 @@
 #pragma once
 
 #include <engine/architecture.hpp>
-
 #include <math/aabb.hpp>
 
 /** @file geometry.hpp
   * @brief Geometry handling.
 **/
-
-
 
 /* This is the OpenCL triangle structure which will be sent to the device. It *
  * does not contain as much information as the host-side implementation since *
@@ -92,7 +89,7 @@ class Geometry : public KernelObject
 
     public:
         Geometry(EngineParams& params);
-        ~Geometry() { }
+        ~Geometry();
 
         void Bind(cl_uint* index);
         void Update(size_t pass);

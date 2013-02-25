@@ -113,11 +113,11 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 			LambdaTriangle triangle;
 			file.read((char*)&triangle, sizeof(LambdaTriangle));
 
-			Vector p1 = Vector(triangle.p1[0], triangle.p1[1], triangle.p1[2]);
-			Vector p2 = Vector(triangle.p2[0], triangle.p2[1], triangle.p2[2]);
-			Vector p3 = Vector(triangle.p3[0], triangle.p3[1], triangle.p3[2]);
+			Vector p1 = Vector(triangle.p1[0], triangle.p1[1], triangle.p1[2] - 3);
+			Vector p2 = Vector(triangle.p2[0], triangle.p2[1], triangle.p2[2] - 3);
+			Vector p3 = Vector(triangle.p3[0], triangle.p3[1], triangle.p3[2] - 3);
 
-			if (triangle.material == 3) this->list.push_back(new Triangle(p1, p2, p3, 660));
+			//if (triangle.material == 3) this->list.push_back(new Triangle(p1, p2, p3, 660));
 			if (triangle.material == 4) this->list.push_back(new Triangle(p1, p2, p3, 580));
 		}
     }
@@ -190,6 +190,11 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 
 	fprintf(stderr, "Uploaded scene data!\n");
     fprintf(stderr, "Initialization complete.\n\n");
+}
+
+Geometry::~Geometry()
+{
+	for (size_t t = 0; t < list.size(); ++t) delete list[t];
 }
 
 void Geometry::Bind(cl_uint* index)

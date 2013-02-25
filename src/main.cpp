@@ -7,10 +7,10 @@
 /* This function will query the statistics from the renderer. */
 void QueryStatistics(Renderer* renderer, Statistics& statistics)
 {
-    statistics.progress  = *(double*)renderer->Query(Query::Progress);
-    statistics.estimated = *(double*)renderer->Query(Query::EstimatedTime);
-    statistics.elapsed   = *(double*)renderer->Query(Query::ElapsedTime);
-    statistics.triangles = *(uint32_t*)renderer->Query(Query::TriangleCount);
+    statistics.progress = *(double*)renderer->Query(Query::Progress);
+    statistics.remains  = *(double*)renderer->Query(Query::EstimatedTime);
+    statistics.elapsed  = *(double*)renderer->Query(Query::ElapsedTime);
+    statistics.tris = *(uint32_t*)renderer->Query(Query::TriangleCount);
 }
 
 int main(/* int argc, char* argv[] */)
@@ -27,10 +27,10 @@ int main(/* int argc, char* argv[] */)
 	try
 	{
         fprintf(stderr, "[+] Waiting for user input.\n");
-		interface->GetInput();
+		if (!interface->GetInput())
+            throw std::runtime_error("Invalid parameters.");
 
 		interface->DisplayStatus("Preparing render...", false);
-		interface->Refresh();
 
         fprintf(stderr, "[+] Initializing renderer.\n\n");
 		renderer = new Renderer(interface->width,
@@ -73,8 +73,8 @@ int main(/* int argc, char* argv[] */)
 		interface->DisplayStatus(e.what(), true);
         fprintf(stderr, "\n[EXCEPTION RAISED] ");
         fprintf(stderr, "-> %s\n\n", e.what());
-        fprintf(stderr, "[+] Bailing out!\n");
         delete renderer;
+        fprintf(stderr, "[+] Killed.\n");
 	}
 
 	interface->Pause();

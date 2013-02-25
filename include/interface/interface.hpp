@@ -1,7 +1,5 @@
 #pragma once
 
-#include <common/error.hpp>
-
 #include <CL/cl.hpp>
 #include <ncurses.h>
 #include <iomanip>
@@ -24,9 +22,9 @@ struct Statistics
     /** @brief The elapsed render time, in seconds. **/
     double elapsed;
     /** @brief The estimated remaining render time, in seconds. **/
-    double estimated;
+    double remains;
     /** @brief The number of triangles in the scene. **/
-    uint32_t triangles;
+    uint32_t tris;
 };
 
 /** @class Interface
@@ -42,38 +40,75 @@ class Interface
         /** @brief The underlying curses window. **/
         WINDOW* window;
 
+        /** @brief Draws the interface outline. **/
+        void DrawFrame();
+
+        /** @brief Draws the progress bar.
+          * @param progress Renderer progress, from 0 to 1.
+        **/
+        void DisplayProgress(double progress);
+
+        /** @brief Displays the remaining and elapsed time.
+          * @param remains The remaining time.
+          * @param elapsed The elapsed time.
+        **/
+        void DisplayTime(double remains, double elapsed);
+
+
+        /** @brief Writes a string at a given line.
+          * @param line The line to write the string at.
+          * @param msg The message to write.
+        **/
+        void WriteLine(size_t line, std::string msg);
+
+        /** @brief Redraws the curses window. **/
+        void Redraw();
+
 	public:
-        /** Engine source (the directory containing the scene). **/
+        /** @brief Engine source (the directory containing the scene). **/
         std::string source;
-        /** Engine output (where to save the final render). **/
+        /** @brief Engine output (where to save the final render). **/
         std::string output;
-
-		double progress;
-
-        /** OpenCL platform to use for rendering. **/
+        /** @brief OpenCL platform to use for rendering. **/
 		cl::Platform platform;
-        /** OpenCL device to use for rendering. **/
+        /** @brief OpenCL device to use for rendering. **/
 		cl::Device device;
-        /** Render width, in pixels. **/
+        /** @brief Render width, in pixels. **/
         size_t width;
-        /** Render height, in pixels. **/
+        /** @brief Render height, in pixels. **/
         size_t height;
-        /** Number of render passes. **/
+        /** @brief Number of render passes. **/
         size_t passes;
 
-        void WriteLine(size_t line, std::string msg);
-		
+        /** @brief Constructs the interface and sets it up. **/
         Interface();
+
+        /** @brief Frees the interface and all associated resources. **/
 		~Interface();
 
-        void DisplayStatus(std::string message, bool error);
-		void DisplayProgress();
-		void DisplayTime(double etc, double elapsed);
+        /** @brief Enables or disables input.
+          * @param input If \c true, input is enabled.
+        **/
+        void SetInput(bool input);
 
+        /** @brief Displays a message in the "render status" field.
+          * @param msg The message to display.
+          * @param error If \c true, the message will appear red.
+          * @note If the message is too long, it will be truncated with an
+          *       ellipsis.
+        **/
+        void DisplayStatus(std::string msg, bool error);
+		
+        /** @brief Takes statistics from the engine and displays them.
+          * @param statistics The engine statistics.
+        **/
 		void GiveStatistics(Statistics statistics);
 
-		void DrawFrame();
-        void GetInput();
-		void Refresh();
+        /** @brief Lets the user select engine parameters.
+          * @return Returns \c false if something went wrong, \c true
+          *         otherwise. **/
+        bool GetInput();
+
+        /** @brief Waits for any key press from the user. **/
 		void Pause();
 };

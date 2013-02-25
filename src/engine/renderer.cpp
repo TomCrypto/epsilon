@@ -79,8 +79,8 @@ bool Renderer::Execute()
     /* Guard to prevent doing redundant passes. */
 	if (currentPass == params.passes) return true;
     bool info = (currentPass == 0);
-
-    fprintf(stderr, "Executing pass %d.\n", (int)currentPass);
+	if (info) fprintf(stderr, "Executing first pass.\n");
+	else if (currentPass == 1) fprintf(stderr, "Executing passes...\n\n");
     
 	cl_int error;
 	size_t local, global = params.width * params.height;
@@ -133,7 +133,7 @@ bool Renderer::Execute()
 		objects[t]->Update(currentPass);
 
 
-    fprintf(stderr, "Pass complete.\n\n");
+    if (info) fprintf(stderr, "Pass complete.\n\n");
     return (++currentPass == params.passes);
 }
 

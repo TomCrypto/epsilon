@@ -11,11 +11,9 @@
 /** @file renderer.hpp
   * @brief ɛpsilon rendering engine.
   *
-  * Thie file contains the renderer.
+  * This file contains the renderer.
   *
-  * \todo Clean up interface code (main.cpp contract already done).
-  * \todo Create geometry & camera format (i.e. string parsing galore).
-  * \todo Improve time computations (use a millisecond source).
+  * \todo Create geometry & camera format (i.e. string parsing galore). [protobufs?]
   * \todo Clean up geometry (BVH building, specifically).
   * \todo When all of the above works perfectly, implement material system &
   *       optimize/document the kernel code.
@@ -23,7 +21,7 @@
   * \todo [Minor annoyance] Find a portable way to print size_t's.
   * \todo [Low priority] Comment the source files.
   *
-***/
+**/
 
 /** @class Renderer
   * @brief Engine implementation.
