@@ -72,7 +72,7 @@ a thousand words:
 
 <p align="center">
 <img
-src="https://github.com/TomCrypto/epsilon/blob/master/extra/pass.png?raw=true"
+src="https://raw.github.com/TomCrypto/epsilon/master/extra/pass.png"
 alt="Render pass comparison"/>
 </p>
 
