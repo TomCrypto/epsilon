@@ -18,8 +18,6 @@ Work is currently being put into the following:
 
 - Documentation (mostly cpp/cl files)
 
-* * *
-
 Features
 --------
 
@@ -38,8 +36,6 @@ Features
 - Doxygen documentation.
 
 - Concise error log.
-
-* * *
 
 Usage
 -----
@@ -82,8 +78,6 @@ making any necessary tweaks to the scene as you see more and more detail. After
 you are satisfied with the result, set a high resolution, and number of passes,
 and let it run.
 
-* * *
-
 Supported Platforms
 -------------------
 
@@ -100,8 +94,6 @@ __MAC__: Status unknown - the renderer has never been tested under Mac OS X. If
          you want to help out with Mac support, drop me a line (contact details
          are on my Github page), all help is greatly welcome.
 
-* * *
-
 Dependencies
 ------------
 
@@ -115,8 +107,6 @@ use OpenCL 1.2 features, such as image arrays to store spectral material data.
 
 Note that all Intel CPU runtimes support OpenCL 1.2 and most GPU runtimes do as
 well, so this should not be a problem. Make sure you have the headers, too.
-
-* * *
 
 Build Options
 -------------
@@ -133,14 +123,12 @@ And then rebuild all. The currently available build flags are listed below:
                   as Windows has guaranteed high-resolution timer support - but
                   this flag should still take effect under Windows.
 
-* * *
-
 Troubleshooting
 ---------------
 
-- *Q*: I am on Windows and the compiler is complaining about `(n)curses.h`.
+-**Q**: I am on Windows and the compiler is complaining about `(n)curses.h`.
 
-  *A*: `ncurses` is Linux-only. But fear not - a Windows implementation exists,
+**A**: `ncurses` is Linux-only. But fear not - a Windows implementation exists,
        under the name of `PDCurses`. You should be able to find it online. Note
        that I did not find a prebuilt 64-bit version of the library, so you may
        have to build it yourself if you want 64-bit support.
@@ -149,45 +137,43 @@ Troubleshooting
        need to replace `ncurses.h` by `curses.h`, link to `PDCurses` instead of
        `ncurses`, and it should work!
 
-- *Q*: I am getting a lot of compiler errors regarding various OpenCL functions
+-**Q**: I am getting a lot of compiler errors regarding various OpenCL functions
        such as undefined references, and so on.
 
-  *A*: Make sure you are defining the `CL_USE_DEPRECATED_OPENCL_1_1_APIS` token
+**A**: Make sure you are defining the `CL_USE_DEPRECATED_OPENCL_1_1_APIS` token
        when building (the default makefile does this) as the OpenCL C++ wrapper
        does not play nice with OpenCL 1.2 at the moment. Also make sure you are
        linking to OpenCL, probably using `-lOpenCL`.
 
-- *Q*: The renderer builds successfully, however, I get a CLC build error - the
+-**Q**: The renderer builds successfully, however, I get a CLC build error - the
        log gives this error: `#include <cl/epsilon.cl> file not found`.
 
-  *A*: This indicates the OpenCL compiler cannot find the kernel files. This is
+ **A**: This indicates the OpenCL compiler cannot find the kernel files. This is
        a known issue for the APP OpenCL runtime, and the fix is as follows:
 
-       1. Go into `src/engine/renderer.cpp`, find the offending line and rename
-          the line with the absolute path (on your system) to `epsilon.cl`. Use
-          quotes instead of angled brackets, e.g.:
+1. Go into `src/engine/renderer.cpp`, find the offending line and rename
+   the line with the absolute path (on your system) to `epsilon.cl`. Use
+   quotes instead of angled brackets, e.g.:
 
-              #include "/path/to/epsilon.cl"
+    #include "/path/to/epsilon.cl"
 
-       2. Do the same for every `#include` directive found in the `cl/` folder.
+2. Do the same for every `#include` directive found in the `cl/` folder.
 
-       3. Rebuild the renderer, and try again, the error should not occur.
+3. Rebuild the renderer, and try again, the error should not occur.
 
-       Why does this happen? We don't know - APP seems to have issues regarding
-       include directives, and we cannot reasonably fix this in the renderer.
+Why does this happen? We don't know - APP seems to have issues regarding
+include directives, and we cannot reasonably fix this in the renderer.
 
-       Another reported fix, is to add the `cl/` directory to your system PATH,
-       which should technically fix the error in a less (or more, depending on
-       your perspective) intrusive manner.
+Another reported fix, is to add the `cl/` directory to your system PATH,
+which should technically fix the error in a less (or more, depending on
+your perspective) intrusive manner.
 
-- *Q*: I tried the renderer on my CPU device, it worked. But when I try and run
+-**Q**: I tried the renderer on my CPU device, it worked. But when I try and run
        it on the GPU, it gets stuck and nothing happens (or my screen crashes)!
 
-  *A*: The current algorithm is implemented as an infinite loop for convenience
+ **A**: The current algorithm is implemented as an infinite loop for convenience
        which can cause problems with GPU's. To fix this, simply change the loop 
        into a `for` construct with, say, 8 or 9 iterations. It should now work.
-
-* * *
 
 License
 -------
