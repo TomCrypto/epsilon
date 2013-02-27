@@ -23,6 +23,7 @@ doc/
 *.cpp~
 *.hpp~
 *.cl~
+*.md~
 *.swp
 *.swo
 *.swn
