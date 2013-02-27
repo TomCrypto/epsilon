@@ -126,9 +126,9 @@ And then rebuild all. The currently available build flags are listed below:
 Troubleshooting
 ---------------
 
--**Q**: I am on Windows and the compiler is complaining about `(n)curses.h`.
+- **Q**: I am on Windows and the compiler is complaining about `(n)curses.h`.
 
-**A**: `ncurses` is Linux-only. But fear not - a Windows implementation exists,
+  **A**: `ncurses` is Linux-only. But fear not - a Windows implementation exists,
        under the name of `PDCurses`. You should be able to find it online. Note
        that I did not find a prebuilt 64-bit version of the library, so you may
        have to build it yourself if you want 64-bit support.
@@ -137,25 +137,25 @@ Troubleshooting
        need to replace `ncurses.h` by `curses.h`, link to `PDCurses` instead of
        `ncurses`, and it should work!
 
--**Q**: I am getting a lot of compiler errors regarding various OpenCL functions
+- **Q**: I am getting a lot of compiler errors regarding various OpenCL functions
        such as undefined references, and so on.
 
-**A**: Make sure you are defining the `CL_USE_DEPRECATED_OPENCL_1_1_APIS` token
+  **A**: Make sure you are defining the `CL_USE_DEPRECATED_OPENCL_1_1_APIS` token
        when building (the default makefile does this) as the OpenCL C++ wrapper
        does not play nice with OpenCL 1.2 at the moment. Also make sure you are
        linking to OpenCL, probably using `-lOpenCL`.
 
--**Q**: The renderer builds successfully, however, I get a CLC build error - the
+- **Q**: The renderer builds successfully, however, I get a CLC build error - the
        log gives this error: `#include <cl/epsilon.cl> file not found`.
 
- **A**: This indicates the OpenCL compiler cannot find the kernel files. This is
+  **A**: This indicates the OpenCL compiler cannot find the kernel files. This is
        a known issue for the APP OpenCL runtime, and the fix is as follows:
 
 1. Go into `src/engine/renderer.cpp`, find the offending line and rename
    the line with the absolute path (on your system) to `epsilon.cl`. Use
    quotes instead of angled brackets, e.g.:
 
-    #include "/path/to/epsilon.cl"
+`#include "/path/to/epsilon.cl"`
 
 2. Do the same for every `#include` directive found in the `cl/` folder.
 
@@ -168,10 +168,10 @@ Another reported fix, is to add the `cl/` directory to your system PATH,
 which should technically fix the error in a less (or more, depending on
 your perspective) intrusive manner.
 
--**Q**: I tried the renderer on my CPU device, it worked. But when I try and run
+- **Q**: I tried the renderer on my CPU device, it worked. But when I try and run
        it on the GPU, it gets stuck and nothing happens (or my screen crashes)!
 
- **A**: The current algorithm is implemented as an infinite loop for convenience
+  **A**: The current algorithm is implemented as an infinite loop for convenience
        which can cause problems with GPU's. To fix this, simply change the loop 
        into a `for` construct with, say, 8 or 9 iterations. It should now work.
 
