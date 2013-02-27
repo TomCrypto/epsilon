@@ -146,7 +146,7 @@ Troubleshooting
        linking to OpenCL, probably using `-lOpenCL`.
 
 - **Q**: The renderer builds successfully, however, I get a CLC build error - the
-       log gives this error: `#include <cl/epsilon.cl> file not found`.
+       log reads: `#include <cl/epsilon.cl> file not found`.
 
   **A**: This indicates the OpenCL compiler cannot find the kernel files. This is
        a known issue for the APP OpenCL runtime, and the fix is as follows:
@@ -155,7 +155,7 @@ Troubleshooting
    the line with the absolute path (on your system) to `epsilon.cl`. Use
    quotes instead of angled brackets, e.g.:
 
-`#include "/path/to/epsilon.cl"`
+    \#include "/path/to/epsilon.cl"
 
 2. Do the same for every `#include` directive found in the `cl/` folder.
 
