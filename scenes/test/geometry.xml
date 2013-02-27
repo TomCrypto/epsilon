@@ -1,0 +1,65 @@
+<geometry>
+    <general leaf = "2" />
+    <data>
+        <triangle ID = "floor">
+            <p1 x = "-5" y = "-5" z = "-20" />
+            <p2 x = "+5" y = "-5" z = "-20" />
+            <p3 x = "+5" y = "-5" z = "+5" />
+        </triangle>
+        <triangle ID = "floor">
+            <p1 x = "-5" y = "-5" z = "-20" />
+            <p2 x = "+5" y = "-5" z = "+5" />
+            <p3 x = "-5" y = "-5" z = "+5" />
+        </triangle>
+        <triangle ID = "leftWall">
+            <p1 x = "-5" y = "-5" z = "-20" />
+            <p2 x = "-5" y = "-5" z = "+5" />
+            <p3 x = "-5" y = "+5" z = "+5" />
+        </triangle>
+        <triangle ID = "leftWall">
+            <p1 x = "-5" y = "-5" z = "-20" />
+            <p2 x = "-5" y = "+5" z = "+5" />
+            <p3 x = "-5" y = "+5" z = "-20" />
+        </triangle>
+        <triangle ID = "rightWall">
+            <p1 x = "+5" y = "-5" z = "-20" />
+            <p2 x = "+5" y = "-5" z = "+5" />
+            <p3 x = "+5" y = "+5" z = "+5" />
+        </triangle>
+        <triangle ID = "rightWall">
+            <p1 x = "+5" y = "-5" z = "-20" />
+            <p2 x = "+5" y = "+5" z = "+5" />
+            <p3 x = "+5" y = "+5" z = "-20" />
+        </triangle>
+        <triangle ID = "frontWall">
+            <p1 x = "-5" y = "-5" z = "+5" />
+            <p2 x = "+5" y = "-5" z = "+5" />
+            <p3 x = "+5" y = "+5" z = "+5" />
+        </triangle>
+        <triangle ID = "frontWall">
+            <p1 x = "-5" y = "-5" z = "+5" />
+            <p2 x = "+5" y = "+5" z = "+5" />
+            <p3 x = "-5" y = "+5" z = "+5" />
+        </triangle>
+        <triangle ID = "ceiling">
+            <p1 x = "-5" y = "+5" z = "-20" />
+            <p2 x = "+5" y = "+5" z = "-20" />
+            <p3 x = "+5" y = "+5" z = "+5" />
+        </triangle>
+        <triangle ID = "ceiling">
+            <p1 x = "-5" y = "+5" z = "-20" />
+            <p2 x = "+5" y = "+5" z = "+5" />
+            <p3 x = "-5" y = "+5" z = "+5" />
+        </triangle>
+        <triangle ID = "light">
+            <p1 x = "-2" y = "+4.95" z = "-2" />
+            <p2 x = "+2" y = "+4.95" z = "-2" />
+            <p3 x = "+2" y = "+4.95" z = "+2" />
+        </triangle>
+        <triangle ID = "light">
+            <p1 x = "-2" y = "+4.95" z = "-2" />
+            <p2 x = "+2" y = "+4.95" z = "+2" />
+            <p3 x = "-2" y = "+4.95" z = "+2" />
+        </triangle>
+    </data>
+</geometry>

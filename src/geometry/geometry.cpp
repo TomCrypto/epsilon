@@ -1,8 +1,12 @@
 #include <geometry/geometry.hpp>
+#include <misc/xmlutils.hpp>
+#include <misc/pugixml.hpp>
+
+#include <set>
 
 /* This will create a triangle from three distinct vertices, and produce some *
  * precomputed values for use in other rendering subsystems.                  */
-Triangle::Triangle(Vector p1, Vector p2, Vector p3, float material)
+Triangle::Triangle(Vector p1, Vector p2, Vector p3, std::string material)
 : p1(p1), p2(p2), p3(p3)
 {
     /* Compute triangle edges... */
@@ -11,9 +15,6 @@ Triangle::Triangle(Vector p1, Vector p2, Vector p3, float material)
 
     /* Compute unsigned normal from the edges. */
     this->n = normalize(cross(this->x, this->y));
-
-    /* Get the triangle centroid (center of gravity). */
-    this->c = (this->p1 + this->p2 + this->p3) / 3.0f;
 
 	/* Compute the triangle's bounding box. */
     Vector lo = Vector(std::min(p1.x, std::min(p2.x, p3.x)),
@@ -27,7 +28,7 @@ Triangle::Triangle(Vector p1, Vector p2, Vector p3, float material)
     /* Compute the triangle's centroid. */
     this->centroid = (p1 + p2 + p3) / 3.0f;
 
-	this->material = material;
+	this->rawMaterial = material;
 }
 
 /* This will format the triangle for export to the OpenCL device, with enough *
@@ -35,11 +36,11 @@ Triangle::Triangle(Vector p1, Vector p2, Vector p3, float material)
  * the triangle's surface normal. Nothing else is required for rendering.     */
 void Triangle::CL(cl_triangle *out)
 {
-    this->p1.CL(&out->p);
-    this->x.CL(&out->x);
-    this->y.CL(&out->y);
-    this->n.CL(&out->n);
-	out->mat = this->material;
+    out->mat = material;
+    p1.CL(&out->p);
+    x.CL(&out->x);
+    y.CL(&out->y);
+    n.CL(&out->n);
 }
 
 /******************************************************************************/
@@ -88,17 +89,61 @@ struct __attribute__ ((packed)) cl_node
 Geometry::Geometry(EngineParams& params) : KernelObject(params)
 {
     fprintf(stderr, "Initializing <Geometry>.\n");
+    fprintf(stderr, "Loading '*/geometry.xml'.\n");
+
+    std::fstream stream;
+    pugi::xml_document doc;
+    GetData("geometry.xml", stream);
+    fprintf(stderr, "Parsing scene geometry...");
+
+    if (!doc.load(stream)) Error::Check(Error::IO, 0, true);
+    fprintf(stderr, " done.\n");
+
+    pugi::xml_node node = doc.child("geometry");
+    leafSize = node.child("general").attribute("leaf").as_int();
+
+    std::set<std::string> materialList;
+    std::vector<Triangle*> triangleList;
+    triangleList.reserve(count);
+
+    for (pugi::xml_node tri : node.child("data").children("triangle"))
+    {
+        Vector p1 = parseVector(tri.child("p1"));
+        Vector p2 = parseVector(tri.child("p2"));
+        Vector p3 = parseVector(tri.child("p3"));
+
+        std::string material = tri.attribute("ID").value();
+        triangleList.push_back(new Triangle(p1, p2, p3, material));
+        materialList.insert(material);
+        ++count;
+    }
+
+    for (size_t t = 0; t < count; ++t)
+    {
+        size_t index;
+        std::string m = triangleList[t]->rawMaterial;
+        index = std::distance(materialList.begin(), materialList.find(m));
+        triangleList[t]->material = index;
+    }
 
     /* READ GEOMETRY DATA HERE. */
+
+    #if 0
 
 	this->list.push_back(new Triangle(Vector(-5, -5, -20), Vector(+5, -5, -20), Vector(+5, -5, +5), 0));
 	this->list.push_back(new Triangle(Vector(-5, -5, -20), Vector(+5, -5, +5), Vector(-5, -5, +5), 0));
 	this->list.push_back(new Triangle(Vector(-5, -5, -20), Vector(-5, -5, +5), Vector(-5, +5, +5), 440));
 	this->list.push_back(new Triangle(Vector(-5, -5, -20), Vector(-5, +5, +5), Vector(-5, +5, -20), 440));
-	this->list.push_back(new Triangle(Vector(+5, -5, -20), Vector(+5, -5, +5), Vector(+5, +5, +5), 530));
-	this->list.push_back(new Triangle(Vector(+5, -5, -20), Vector(+5, +5, +5), Vector(+5, +5, -20), 530));
+	this->list.push_back(new Triangle(Vector(+5, -5, -20), Vector(+5, -5, +5), Vector(+5, +5, +5), 660));
+	this->list.push_back(new Triangle(Vector(+5, -5, -20), Vector(+5, +5, +5), Vector(+5, +5, -20), 660));
 	this->list.push_back(new Triangle(Vector(-5, -5, +5), Vector(+5, -5, +5), Vector(+5, +5, +5), 0));
 	this->list.push_back(new Triangle(Vector(-5, -5, +5), Vector(+5, +5, +5), Vector(-5, +5, +5), 0));
+
+	this->list.push_back(new Triangle(Vector(-5, +5, -20), Vector(+5, +5, -20), Vector(+5, +5, +5), 0));
+	this->list.push_back(new Triangle(Vector(-5, +5, -20), Vector(+5, +5, +5), Vector(-5, +5, +5), 0));
+
+	this->list.push_back(new Triangle(Vector(-2, +4.95, -2), Vector(+2, +4.95, -2), Vector(+2, +4.95, +2), -1));
+	this->list.push_back(new Triangle(Vector(-2, +4.95, -2), Vector(+2, +4.95, +2), Vector(-2, +4.95, +2), -1));
 
     std::fstream file;
     GetData("geometry", file);
@@ -113,88 +158,125 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 			LambdaTriangle triangle;
 			file.read((char*)&triangle, sizeof(LambdaTriangle));
 
-			Vector p1 = Vector(triangle.p1[0], triangle.p1[1], triangle.p1[2] - 3);
-			Vector p2 = Vector(triangle.p2[0], triangle.p2[1], triangle.p2[2] - 3);
-			Vector p3 = Vector(triangle.p3[0], triangle.p3[1], triangle.p3[2] - 3);
+			/* Vector p1 = Vector(triangle.p1[0] + 1.5, triangle.p1[1] + 0.1, triangle.p1[2] - 6);
+			Vector p2 = Vector(triangle.p2[0] + 1.5, triangle.p2[1] + 0.1, triangle.p2[2] - 6);
+			Vector p3 = Vector(triangle.p3[0] + 1.5, triangle.p3[1] + 0.1, triangle.p3[2] - 6); */
 
 			//if (triangle.material == 3) this->list.push_back(new Triangle(p1, p2, p3, 660));
-			if (triangle.material == 4) this->list.push_back(new Triangle(p1, p2, p3, 580));
+			if (triangle.material == 3)
+			{
+				Vector p1 = Vector(triangle.p1[0], triangle.p1[1] + 0.1, triangle.p1[2] - 2);
+				Vector p2 = Vector(triangle.p2[0], triangle.p2[1] + 0.1, triangle.p2[2] - 2);
+				Vector p3 = Vector(triangle.p3[0], triangle.p3[1] + 0.1, triangle.p3[2] - 2);
+
+				triangleList.push_back(new Triangle(p1, p2, p3, ""));
+				triangleList[triangleList.size() - 1]->material = 6;
+
+				p1.z += 10; p2.z += 10; p3.z += 10;
+				p1.x -= 5; p2.x -= 5; p3.x -= 5;
+				p1.y = (p1.y + 5) * 1.3 - 5;
+				p2.y = (p2.y + 5) * 1.3 - 5;
+				p3.y = (p3.y + 5) * 1.3 - 5;
+				triangleList.push_back(new Triangle(p1, p2, p3, ""));
+				triangleList[triangleList.size() - 1]->material = 5;
+
+				p1.z += 25; p2.z += 25; p3.z += 25;
+				p1.x += 16; p2.x += 16; p3.x += 16;		
+				p1.y = (p1.y + 5) / 1.3 - 5;
+				p2.y = (p2.y + 5) / 1.3 - 5;
+				p3.y = (p3.y + 5) / 1.3 - 5;		
+				triangleList.push_back(new Triangle(p1, p2, p3, ""));
+				triangleList[triangleList.size() - 1]->material = 4;
+			}
+
+			/* if (triangle.material == 4)
+			{
+				Vector p1 = Vector(triangle.p1[0], triangle.p1[1], triangle.p1[2]);
+				Vector p2 = Vector(triangle.p2[0], triangle.p2[1], triangle.p2[2]);
+				Vector p3 = Vector(triangle.p3[0], triangle.p3[1], triangle.p3[2]);
+
+				triangleList.push_back(new Triangle(p1, p2, p3, ""));
+				triangleList[triangleList.size() - 1]->material = 6;
+			} */
 		}
     }
 
-	file.close();
+	file.close();	
+
+	count = triangleList.size();
+
+	#endif
+
     cl_int error;
 
-	fprintf(stderr, "There are %u triangles.\n", (uint32_t)this->list.size());
+	fprintf(stderr, "Total %u triangles.\n", (uint32_t)count);
+    fprintf(stderr, "Now building BVH.\n");
 
-    /* END READ DATA. */
+    uint32_t leafCount = 0, nodeCount = 0;
+    BVHFlatNode* bvhTree = nullptr;
 
-	fprintf(stderr, "Now building BVH...\n");
+    BuildBVH(triangleList, leafSize, &leafCount, &nodeCount, &bvhTree);
+    fprintf(stderr, "BVH successfully built, %u nodes.\n", nodeCount);
+    fprintf(stderr, "Number of leaves: %u/%u.\n", leafCount, leafSize);
+    fprintf(stderr, "Now compacting BVH.\n");
 
-	/* BVH INITIALIZATION HERE. */
-	this->leafSize = 2;
-	this->nNodes = 0;
-	this->nLeafs = 0;
-	this->flatTree = nullptr;
-	BuildBVH();
-
-	fprintf(stderr, "BVH built!\n");
-	fprintf(stderr, "Now compacting BVH (%d nodes)...\n", nNodes);
-
-	cl_node* rawNodes = new cl_node[this->nNodes];
-	for (size_t t = 0; t < this->nNodes; ++t)
+	cl_node* rawNodes = new cl_node[nodeCount];
+	for (size_t t = 0; t < nodeCount; ++t)
 	{
-		flatTree[t].bbox.min.CL(&rawNodes[t].bbox_min);
-		flatTree[t].bbox.max.CL(&rawNodes[t].bbox_max);
-		rawNodes[t].data.s[0] = flatTree[t].start;
-		rawNodes[t].data.s[1] = flatTree[t].nPrims;
-		rawNodes[t].data.s[2] = flatTree[t].rightOffset;
+		bvhTree[t].bbox.min.CL(&rawNodes[t].bbox_min);
+		bvhTree[t].bbox.max.CL(&rawNodes[t].bbox_max);
+		rawNodes[t].data.s[0] = bvhTree[t].start;
+		rawNodes[t].data.s[1] = bvhTree[t].nPrims;
+		rawNodes[t].data.s[2] = bvhTree[t].rightOffset;
 		rawNodes[t].data.s[3] = 0;
 	}
 
-	fprintf(stderr, "BVH compacted, uploading...\n");
+	fprintf(stderr, "BVH compacted, uploading to device...\n");
 
 	this->nodes = cl::Buffer(params.context,
 							 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-						     sizeof(cl_node) * nNodes, rawNodes, &error);
+						     sizeof(cl_node) * nodeCount, rawNodes, &error);
 	Error::Check(Error::Memory, error);
 
-	fprintf(stderr, "BVH uploaded! (now destroying the compact array)\n");
+	fprintf(stderr, "BVH uploaded! Freeing resources.\n");
 	delete[] rawNodes;
+    delete[] bvhTree;
 
-	fprintf(stderr, "Compacting triangles...\n");
+	fprintf(stderr, "Compacting triangle list.\n");
 
-	this->count = this->list.size();
-    cl_triangle* raw = new cl_triangle[this->count];
-    for (size_t t = 0; t < this->count; ++t) list[t]->CL(raw + t);
+    cl_triangle* raw = new cl_triangle[count];
+    for (size_t t = 0; t < count; ++t) triangleList[t]->CL(raw + t);
 
-	fprintf(stderr, "Triangles compacted, uploading...\n");
+	fprintf(stderr, "Triangles compacted, uploading to device...\n");
 
     this->triangles = cl::Buffer(params.context,
                                  CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                                 sizeof(cl_triangle) * this->count,
+                                 sizeof(cl_triangle) * count,
                                  raw, &error);
     Error::Check(Error::Memory, error);
 
-	fprintf(stderr, "Triangle data uploaded! Deleting...\n");
+	fprintf(stderr, "Triangle data uploaded! Freeing resources.\n");
+    for (size_t t = 0; t < count; ++t) delete triangleList[t];
 	delete [] raw;
 
-	cl_info info;
-	info.triangleCount = this->count;
-	info.nodeCount = this->nNodes;
+    fprintf(stderr, "Uploading geometry information.\n");
 
-	this->sceneInfo = cl::Buffer(params.context,
+	cl_info geometryInfo;
+	geometryInfo.triangleCount = count;
+	geometryInfo.nodeCount = nodeCount;
+
+	info = cl::Buffer(params.context,
 						     	 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-								 sizeof(cl_info), &info, &error);
+								 sizeof(cl_info), &geometryInfo, &error);
 	Error::Check(Error::Memory, error);
 
-	fprintf(stderr, "Uploaded scene data!\n");
     fprintf(stderr, "Initialization complete.\n\n");
+    stream.close();
 }
 
 Geometry::~Geometry()
 {
-	for (size_t t = 0; t < list.size(); ++t) delete list[t];
+	//for (size_t t = 0; t < list.size(); ++t) delete list[t];
 }
 
 void Geometry::Bind(cl_uint* index)
@@ -205,20 +287,16 @@ void Geometry::Bind(cl_uint* index)
     fprintf(stderr, "Binding <nodes@Geometry> to index %u.\n", *index);
 	Error::Check(Error::Bind, params.kernel.setArg(*index, this->nodes));
     (*index)++;
-    fprintf(stderr, "Binding <sceneInfo@Geometry> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg(*index, this->sceneInfo));
+    fprintf(stderr, "Binding <info@Geometry> to index %u.\n", *index);
+    Error::Check(Error::Bind, params.kernel.setArg(*index, this->info));
     (*index)++;
 }
 
-void Geometry::Update(size_t /* index */)
-{
-    return;
-}
+void Geometry::Update(size_t /* index */) { return; }
 
 void* Geometry::Query(size_t query)
 {
-    if (query == Query::TriangleCount) return &this->count;
-    return nullptr;
+    return (query == Query::TriangleCount) ? &this->count : nullptr;
 }
 
 struct BVHBuildEntry {
@@ -228,7 +306,9 @@ struct BVHBuildEntry {
  uint32_t start, end;
 };
 
-void Geometry::BuildBVH()
+void Geometry::BuildBVH(std::vector<Triangle*>& list, uint32_t leafSize,
+                        uint32_t* leafCount, uint32_t* nodeCount,
+                        BVHFlatNode** bvhTree)
 {
  BVHBuildEntry todo[128];
  uint32_t stackptr = 0;
@@ -237,13 +317,13 @@ void Geometry::BuildBVH()
 
  // Push the root
  todo[stackptr].start = 0;
- todo[stackptr].end = this->list.size();
+ todo[stackptr].end = list.size();
  todo[stackptr].parent = 0xfffffffc;
  stackptr++;
 
 	BVHFlatNode node;
 	std::vector<BVHFlatNode> buildnodes;
-	buildnodes.reserve(this->list.size()*2);
+	buildnodes.reserve(list.size()*2);
 
  while(stackptr > 0) {
 		// Pop the next item off of the stack
@@ -252,17 +332,17 @@ void Geometry::BuildBVH()
 		uint32_t end = bnode.end;
 		uint32_t nPrims = end - start;
 
-		nNodes++;
+		(*nodeCount)++;
 		node.start = start;
 		node.nPrims = nPrims;
 		node.rightOffset = Untouched;
 
 		// Calculate the bounding box for this node
-		AABB bb( this->list[start]->BoundingBox());
-		AABB bc( this->list[start]->Centroid());
+		AABB bb( list[start]->BoundingBox());
+		AABB bc( list[start]->Centroid());
 		for(uint32_t p = start+1; p < end; ++p) {
-			bb.ExpandToInclude( this->list[p]->BoundingBox());
-			bc.ExpandToInclude( this->list[p]->Centroid());
+			bb.ExpandToInclude( list[p]->BoundingBox());
+			bc.ExpandToInclude( list[p]->Centroid());
 		}
 		node.bbox = bb;
 
@@ -270,7 +350,7 @@ void Geometry::BuildBVH()
   // size, then this will become a leaf. (Signified by rightOffset == 0)
 		if(nPrims <= leafSize) {
 			node.rightOffset = 0;
-			nLeafs++;
+		    (*leafCount)++;
 		}
 
 		buildnodes.push_back(node);
@@ -283,7 +363,7 @@ void Geometry::BuildBVH()
 			// When this is the second touch, this is the right child.
 			// The right child sets up the offset for the flat tree.
 			if( buildnodes[bnode.parent].rightOffset == TouchedTwice ) {
-				buildnodes[bnode.parent].rightOffset = nNodes - 1 - bnode.parent;
+				buildnodes[bnode.parent].rightOffset = *nodeCount - 1 - bnode.parent;
 			}
 		}
 
@@ -300,8 +380,8 @@ void Geometry::BuildBVH()
 		// Partition the list of objects on this split
 		uint32_t mid = start;
 		for(uint32_t i=start;i<end;++i) {
-			if( this->list[i]->Centroid()[split_dim] < split_coord ) {
-				std::swap( this->list[i], this->list[mid] );
+			if( list[i]->Centroid()[split_dim] < split_coord ) {
+				std::swap( list[i], list[mid] );
 				++mid;
 			}
 		}
@@ -314,18 +394,18 @@ void Geometry::BuildBVH()
 		// Push right child
 		todo[stackptr].start = mid;
 		todo[stackptr].end = end;
-		todo[stackptr].parent = nNodes-1;
+		todo[stackptr].parent = (*nodeCount)-1;
 		stackptr++;
 
 		// Push left child
 		todo[stackptr].start = start;
 		todo[stackptr].end = mid;
-		todo[stackptr].parent = nNodes-1;
+		todo[stackptr].parent = (*nodeCount)-1;
 		stackptr++;
  }
 
 	// Copy the temp node data to a flat array
-	flatTree = new BVHFlatNode[nNodes];
-	for(uint32_t n=0; n<nNodes; ++n)
-		flatTree[n] = buildnodes[n];
+	*bvhTree = new BVHFlatNode[*nodeCount];
+	for(uint32_t n=0; n<*nodeCount; ++n)
+		(*bvhTree)[n] = buildnodes[n];
 }

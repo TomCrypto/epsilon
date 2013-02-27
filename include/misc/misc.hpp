@@ -21,7 +21,11 @@
 class Progress : public KernelObject
 {
     private:
+        #ifdef LOW_RES_TIME
+        time_t startTime;
+        #else
         double startTime;
+        #endif
 		double elapsed;
         double progress;
         double remains;

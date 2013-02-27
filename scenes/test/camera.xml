@@ -1,0 +1,6 @@
+<camera>
+  <position x = "0" y = "0" z = "-15" />
+  <target   x = "0" y = "0" z = "0" />
+  <misc fov = "45" /> <!-- degrees -->
+  <focal spread = "0.1" length = "15.0" />
+</camera>

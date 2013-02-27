@@ -11,7 +11,7 @@ typedef struct Triangle
     //float3 ln, rn, fn; /* Left, right and far edge normals. */
 	//int material; // TEMPORARY
     float3 p1, e1, e2, n;
-    float mat;
+    int mat;
 } Triangle;
 
 /* Intersects a ray with a triangle. */

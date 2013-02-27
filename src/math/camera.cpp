@@ -1,61 +1,69 @@
 #include <math/camera.hpp>
 
+#include <misc/xmlutils.hpp>
+#include <misc/pugixml.hpp>
+
 struct cl_data
 {
-    cl_float4 p[4];
-    cl_float4 pos;
+    cl_float4 p[4];     /* Focal plane.                                   */
+    cl_float4 pos;      /* Camera position.                               */
+    cl_float4 up, left; /* "Up" and "left" vectors (of the camera basis). */
+	cl_float spread;    /* The focal spread, or aperture radius.          */
 };
 
 Camera::Camera(EngineParams& params) : KernelObject(params)
 {
-    fprintf(stderr, "Initializing <Camera>...");
+    fprintf(stderr, "Initializing <Camera>.\n");
+    fprintf(stderr, "Loading '*/camera.xml'.\n");
 
-	GOOGLE_PROTOBUF_VERIFY_VERSION;
-	camera::Camera buf;
 	std::fstream stream;
-	GetData("camera", stream);
-	buf.ParseFromIstream(&stream);
+    pugi::xml_document doc;
+	GetData("camera.xml", stream);
+    fprintf(stderr, "Parsing camera parameters...");
 
-	Vector cameraPos = Vector(buf.position().x(),
-							  buf.position().y(),
-							  buf.position().z());
+	if (!doc.load(stream)) Error::Check(Error::IO, 0, true);
+    fprintf(stderr, " done.\n");
 
-	Vector cameraTar = Vector(buf.target().x(),
-							  buf.target().y(),
-							  buf.target().z());
+    pugi::xml_node node = doc.child("camera");
+    Vector cameraPos = parseVector(node.child("position"));
+    Vector cameraTarget = parseVector(node.child("target"));
+    Vector dir = normalize(cameraTarget - cameraPos);
 
-	Vector dir = normalize(cameraTar - cameraPos);
+    node = node.child("misc");
+    float FOV = (PI / 180.0f) * node.attribute("fov").as_float();
 
-	fprintf(stderr, "Pos = (%.2f, %.2f, %.2f)\n", cameraPos.x, cameraPos.y, cameraPos.z);
-	fprintf(stderr, "Tar = (%.2f, %.2f, %.2f)\n", cameraTar.x, cameraTar.y, cameraTar.z);
-	fprintf(stderr, "Dir = (%.2f, %.2f, %.2f)\n", dir.x, dir.y, dir.z);
+    node = node.parent();
+    node = node.child("focal"); /* Depth-of-field params. */
+    float focalSpread = node.attribute("spread").as_float();
+    float focalLength = node.attribute("length").as_float();
 
-	float FOV = (PI / 180.0f) * buf.fieldofview();
+	fprintf(stderr, "Camera position = (%.2f, %.2f, %.2f).\n", cameraPos.x,
+                                                               cameraPos.y,
+                                                               cameraPos.z);
 
-	fprintf(stderr, "FOV = %.2f\n", FOV);
+	fprintf(stderr, "Camera target = (%.2f, %.2f, %.2f).\n", cameraTarget.x,
+                                                             cameraTarget.y,
+                                                             cameraTarget.z);
 
-	stream.close();
-
-    /* READ DATA HERE. */
-    //Vector cameraPos = Vector(0, 0, -14.9);
-    //Vector dir = Vector(0, 0, 1);
-    //float FOV = 45 * (3.14169265 / 180);
-    /* END READ DATA. */
+	fprintf(stderr, "Field of view = %.2f radians.\n", FOV);
+	fprintf(stderr, "Focal length = %.2f.\n", focalLength);
+	fprintf(stderr, "Focal spread = %.2f.\n", focalSpread);
 
     Vector normal, tangent;
-    Basis(normalize(dir), &normal, &tangent);
+    Basis(dir, &normal, &tangent);
 
     Vector focalPlane[4];
     float z = 1.0f / tan(FOV * 0.5f);
-    focalPlane[0] = Vector(-1.0f, +1.0f, z);
-    focalPlane[1] = Vector(+1.0f, +1.0f, z);
-    focalPlane[2] = Vector(+1.0f, -1.0f, z);
-    focalPlane[3] = Vector(-1.0f, -1.0f, z);
+    focalPlane[0] = normalize(Vector(-1.0f, +1.0f, z));
+    focalPlane[1] = normalize(Vector(+1.0f, +1.0f, z));
+    focalPlane[2] = normalize(Vector(+1.0f, -1.0f, z));
+    focalPlane[3] = normalize(Vector(-1.0f, -1.0f, z));
 
     for (size_t t = 0; t < 4; ++t)
     {
+        /* Transform the focal plane to camera space (= "rotate" it) */
         focalPlane[t] = Transform(focalPlane[t], tangent, normal, dir);
-        focalPlane[t] += cameraPos;
+        focalPlane[t] = focalPlane[t] * focalLength + cameraPos;
     }
 
     cl_int error;
@@ -66,12 +74,16 @@ Camera::Camera(EngineParams& params) : KernelObject(params)
     cl_data data;
     for (size_t t = 0; t < 4; ++t) focalPlane[t].CL(&data.p[t]);
     cameraPos.CL(&data.pos);
+	normal.CL(&data.up);
+	tangent.CL(&data.left);
+	data.spread = focalSpread;
 
     error = params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
                                             sizeof(cl_data), &data);
     Error::Check(Error::CLIO, error);
 
-    fprintf(stderr, " complete!\n\n");
+    fprintf(stderr, "Initialization complete.\n\n");
+    stream.close();
 }
 
 void Camera::Bind(cl_uint* index)
@@ -81,12 +93,5 @@ void Camera::Bind(cl_uint* index)
 	(*index)++;
 }
 
-void Camera::Update(size_t /* index */)
-{
-    return;
-}
-
-void* Camera::Query(size_t /* query */)
-{
-    return nullptr;
-}
+void Camera::Update(size_t /* index */) { return; }
+void* Camera::Query(size_t /* query */) { return nullptr; }

@@ -20,8 +20,6 @@ obj/
 doc/
 
 # Swap and tmp files
-*.pb.cc~
-*.pb.h~
 *.cpp~
 *.hpp~
 *.cl~
@@ -30,13 +28,8 @@ doc/
 *.swn
 *.swm
 
-# Compiled protobuf files
-*.pb.cc
-*.pb.h
-*.pb.o
-
 # Renders and binary data
-scenes/
+excluded/
 *.ppm
 
 # Logs

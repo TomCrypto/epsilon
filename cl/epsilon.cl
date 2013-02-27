@@ -168,21 +168,26 @@ void kernel clmain(global float4 *render, /* Render buffer in XYZn format. */
 				   constant ulong4 *seed /* Seed for the PRNG. */
                    )
 {
+	/* TEMPORARY | matID -> wavelength peak colors. negative -> light. */
+	float matID[6] = {0, 0, 525, 480, -1, 640};
+
+	size_t index = get_global_id(0);
+
 	/* Get a PRNG instance for this worker. */
-    PRNG prng = init(get_global_id(0), seed);
+    PRNG prng = init(index, seed);
 
     /* Get pixel coordinates in normalized coordinates [0..1). */
     float a1 = rand(&prng) - 0.5f;
     float a2 = rand(&prng) - 0.5f;
 
 	float ratio = (float)params->width / params->height;
-	float x = (float)(a1 + get_global_id(0) % params->width) / params->width;
-	float y = (float)(a2 + get_global_id(0) / params->width) / params->height;
+	float x = (float)(a1 + index % params->width) / params->width;
+	float y = (float)(a2 + index / params->width) / params->height;
 	x = 0.5f * (1 + ratio) - x * ratio;
 
     /* Compute the standard camera ray. */
     float3 origin, direction;
-    Trace(x, y, &origin, &direction, camera);
+    Trace(x, y, &origin, &direction, camera, rand(&prng), rand(&prng));
 
     /* Select random wavelength. */
     float wavelength = rand(&prng);
@@ -191,30 +196,30 @@ void kernel clmain(global float4 *render, /* Render buffer in XYZn format. */
     float radiance = 0.0f;
     while (true)
     {
-        int hit = -1;
+		int hit = -1;
         Triangle tri;
-        //float t = Intersect(geometry, origin, direction, &hit, sceneInfo->triangleCount);
 
 		float t;
 		bool X = Intersect(origin, direction, &t, &hit, triangles, nodes);
 
-		//float t = Intersect(triangles, origin, direction, &hit, sceneInfo->triangleCount);
-
         if (!X)
         {
-            radiance = 10.0f;
+			radiance = 10;
             break;
         }
 
 		tri = triangles[hit];
+		float material = matID[tri.mat];
 
         float3 point = origin + t * direction;
 
         /* Check material for light! */
-        if (tri.mat < 0)
+        if (material < 0)
         {
             /* This is a light. */
-            radiance = 10.0f;
+			float w = (380 + 400 * wavelength) * 1e-9;
+			float powerTerm  = 3.74183e-16f * pow(w, -5.0f);
+    		radiance = powerTerm / (exp(1.4388e-2f / (w * 4150)) - 1.0f);
             break;
         }
 
@@ -222,10 +227,11 @@ void kernel clmain(global float4 *render, /* Render buffer in XYZn format. */
         float3 normal = tri.n;
         normal = normal * sign(-dot(normal, direction));
 
-		/* Otherwise, apply response curve. */
+		/* Get real wavelength (380nm to 680nm) */
 		float w = 380 + 400 * wavelength;
 
-		float response = (tri.mat == 0) ? 1.0 : 0.45 + exp(-pow(w - tri.mat, 2.0f) * 0.001f) * 0.55;
+		/* Otherwise, apply response curve. */
+		float response = (material == 0) ? 1.0 : 0.45 + exp(-pow(w - material, 2.0f) * 0.001f) * 0.55;
 		response *= 0.8;
 
 		/* Get a random diffuse sample. */

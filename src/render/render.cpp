@@ -115,7 +115,7 @@ void PixelBuffer::Tonemap()
 	for (size_t t = 0; t < this->width * this->height; ++t)
     {
         float luminance = this->pixels[t].Luminance();
-        if (luminance > EPSILON) logAvg += log(luminance);
+        logAvg += log(luminance + EPSILON);
 	}
 
 	logAvg = exp(logAvg / (this->width * this->height));

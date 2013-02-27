@@ -125,13 +125,12 @@ bool Renderer::Execute()
 		local /= 2;
 	}
 
-	this->params.queue.finish();
+	Error::Check(Error::Execute, params.queue.flush());
+	Error::Check(Error::Execute, params.queue.finish());
 
     if (info) fprintf(stderr, "--> Updating all kernel objects.\n");
-
     for (size_t t = 0; t < objects.size(); ++t)
 		objects[t]->Update(currentPass);
-
 
     if (info) fprintf(stderr, "Pass complete.\n\n");
     return (++currentPass == params.passes);

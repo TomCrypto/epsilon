@@ -7,20 +7,14 @@
   * @brief Geometry handling.
 **/
 
-/* This is the OpenCL triangle structure which will be sent to the device. It *
- * does not contain as much information as the host-side implementation since *
- * things like the triangle's centroid, or bounding box are not necessary for *
- * rendering, but only for building the bounding volume hierarchy, host-side. */
-
-
-
 struct cl_triangle
 {
     cl_float4 p; /* The main triangle vertex. */
     cl_float4 x; /* The "left" triangle edge. */
     cl_float4 y; /* The other triangle edge.  */
     cl_float4 n; /* The triangle's normal.    */
-	cl_float mat;
+    // add tangent/bitangent here as well
+	cl_int mat;  /* The triangle's material.  */
 };
 
 
@@ -33,26 +27,38 @@ struct cl_triangle
 **/
 class Triangle
 {
-    public:
-        /* The vertices... */
+    private:
         Vector p1, p2, p3;
-		float material;
+        AABB boundingBox;
+        Vector centroid;
+        Vector x, y, n;
 
-        /* Precomputed... */
-        Vector x, y, n, c;
-		AABB boundingBox;
-		Vector centroid;
+    public:
+        /** @brief The triangle's normalized material index. **/
+        uint32_t material;
 
-        /* Creates the triangle from three points. */
-        Triangle(Vector p1, Vector p2, Vector p3, float material);
+        /** @brief The triangle's unnormalized material ID (as a string). **/
+        std::string rawMaterial;
 
-		/* This function returns the bounding box of the triangle. */
+        /** @brief Creates the triangle from three points (vertices).
+          * @param p1 The first vertex.
+          * @param p2 The second vertex.
+          * @param p3 The third vertex.
+          * @param material The triangle's material ID.
+        **/
+        Triangle(Vector p1, Vector p2, Vector p3, std::string material);
+
+        /** @brief Returns the triangle's (minimum) bounding box.
+        **/
         AABB BoundingBox() { return this->boundingBox; }
 
-        /* This function returns the centroid of the triangle. */
+        /** @brief Returns the triangle's centroid.
+        **/
         Vector Centroid() { return this->centroid; }
 
-        /* Outputs the equivalent OpenCL triangle structure. */
+        /** @brief Converts the triangle to a device-side representation.
+          * @param out A pointer to write the output to.
+        **/
         void CL(cl_triangle *out);
 };
 
@@ -67,24 +73,29 @@ struct BVHFlatNode
   *
   * This kernel object manages the list of triangles in the scene to render.
   * 
-  * This kernel object is passive, and handles the following queries:
+  * This kernel object handles the following queries:
   * - \c Query::TriangleCount
 **/
 class Geometry : public KernelObject
 {
     private:
-		void BuildBVH();
+		void BuildBVH(std::vector<Triangle*>& list, uint32_t leafSize,
+                      uint32_t* leafCount, uint32_t* nodeCount,
+                      BVHFlatNode** bvhTree);
 
-        std::vector<Triangle*> list;
+        /** @brief Contains the list of triangles in the scene. **/
         cl::Buffer triangles;
+
+        /** @brief Contains the number of triangles in the scene. **/
         uint32_t count;
 
-		cl::Buffer sceneInfo;
+        /** @brief Contains the geometry information (e.g. triangle count). **/
+		cl::Buffer info;
 
+        /** @brief Describes the BVH leaf size (performance parameter). **/
 		uint32_t leafSize;
-		uint32_t nLeafs, nNodes;
-		BVHFlatNode* flatTree;
 
+        /** @brief Contains the BVH nodes (for traversal). **/
 		cl::Buffer nodes;
 
     public:

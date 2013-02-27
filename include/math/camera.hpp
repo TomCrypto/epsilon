@@ -3,8 +3,6 @@
 #include <engine/architecture.hpp>
 #include <math/vector.hpp>
 
-#include <camera.pb.h>
-
 /** @file camera.hpp
   * @brief Camera manipulation.
 **/

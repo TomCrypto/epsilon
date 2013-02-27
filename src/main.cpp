@@ -2,7 +2,11 @@
 #include <engine/renderer.hpp>
 
 #include <unistd.h>
+#include <cstdlib>
 #include <cstdio>
+
+/* To ensure log cleanly ends, fd automatically closed. */
+void end(void) { fprintf(stderr, "\n--- END LOG ---\n"); }
 
 /* This function will query the statistics from the renderer. */
 void QueryStatistics(Renderer* renderer, Statistics& statistics)
@@ -18,9 +22,26 @@ int main(/* int argc, char* argv[] */)
     /* Create an error log to stderr. */
     FILE* log = fopen("error.log", "w");
     dup2(fileno(log), 2);
+	atexit(end);
 
     fprintf(stderr, "--- BEGIN LOG ---\n\n");
-    fprintf(stderr, "[+] Initializing interface.\n");
+
+    /* Enumerate some build information here. */
+    #ifdef _WIN32
+    fprintf(stderr, "[+] Running on Windows.\n");
+    #elif __linux__
+    fprintf(stderr, "[+] Running on Linux.\n");
+    #else
+    #error Unrecognized OS. Override at your own risk.
+    #endif
+
+    #ifdef LOW_RES_TIME
+    fprintf(stderr, "[+] Using low-resolution timer.\n");
+    #else
+    fprintf(stderr, "[+] Using high-resolution timer.\n");
+    #endif
+
+    fprintf(stderr, "\n[+] Initializing interface.\n");
     Interface* interface = new Interface();
     Renderer* renderer = nullptr;
 
@@ -79,9 +100,5 @@ int main(/* int argc, char* argv[] */)
 
 	interface->Pause();
 	delete interface;
-
-    /* Close the log, and we. are. done! */
-    fprintf(stderr, "\n--- END LOG ---\n");
-    fclose(log);
-    return 0;
+	return 0;
 }

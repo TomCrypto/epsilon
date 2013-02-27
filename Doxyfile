@@ -32,7 +32,7 @@ PROJECT_NAME           = εpsilon
 # This could be handy for archiving the generated documentation or 
 # if some version control system is used.
 
-PROJECT_NUMBER         = 
+PROJECT_NUMBER         = 0.12
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description 
 # for a project that appears at the top of each page and should give viewer 
@@ -45,7 +45,7 @@ PROJECT_BRIEF          = "Physically Based Spectral Path Tracer"
 # exceed 55 pixels and the maximum width should not exceed 200 pixels. 
 # Doxygen will copy the logo to the output directory.
 
-PROJECT_LOGO           = 
+PROJECT_LOGO           = ./extra/icon.png
 
 # The OUTPUT_DIRECTORY tag is used to specify the (relative or absolute) 
 # base path where the generated documentation will be put. 
@@ -728,7 +728,10 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = ./pb/ \
-                         ./scenes/
+                         ./scenes/ \
+                         ./include/misc/pugixml.hpp \
+                         ./include/misc/pugiconfig.hpp \
+                         ./src/misc/pugixml.cpp
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or 
 # directories that are symbolic links (a Unix file system feature) are excluded 

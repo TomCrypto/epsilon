@@ -13,7 +13,6 @@
   *
   * This file contains the renderer.
   *
-  * \todo Create geometry & camera format (i.e. string parsing galore). [protobufs?]
   * \todo Clean up geometry (BVH building, specifically).
   * \todo When all of the above works perfectly, implement material system &
   *       optimize/document the kernel code.
