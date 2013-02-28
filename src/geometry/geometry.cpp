@@ -1,8 +1,181 @@
 #include <geometry/geometry.hpp>
 #include <misc/xmlutils.hpp>
 #include <misc/pugixml.hpp>
+#include <math/aabb.hpp>
 
 #include <set>
+
+struct cl_triangle
+{
+    cl_float4 p; /* The main triangle vertex. */
+    cl_float4 x; /* The "left" triangle edge. */
+    cl_float4 y; /* The other triangle edge.  */
+    cl_float4 n; /* The triangle's normal.    */
+    // add tangent/bitangent here as well
+	cl_int mat;  /* The triangle's material.  */
+};
+
+
+/** @class Triangle
+  * @brief Device-side triangle.
+  *
+  * This represents a triangle. Note that the actual triangle data sent to the
+  * device is a subset of what this class contains, since not all information
+  * is useful for rendering, some of it being only needed for initialization.
+**/
+class Triangle
+{
+    private:
+        Vector p1, p2, p3;
+        AABB boundingBox;
+        Vector centroid;
+        Vector x, y, n;
+
+    public:
+        /** @brief The triangle's normalized material index. **/
+        uint32_t material;
+
+        /** @brief The triangle's unnormalized material ID (as a string). **/
+        std::string rawMaterial;
+
+        /** @brief Creates the triangle from three points (vertices).
+          * @param p1 The first vertex.
+          * @param p2 The second vertex.
+          * @param p3 The third vertex.
+          * @param material The triangle's material ID.
+        **/
+        Triangle(Vector p1, Vector p2, Vector p3, std::string material);
+
+        /** @brief Returns the triangle's (minimum) bounding box.
+        **/
+        AABB BoundingBox() { return this->boundingBox; }
+
+        /** @brief Returns the triangle's centroid.
+        **/
+        Vector Centroid() { return this->centroid; }
+
+        /** @brief Converts the triangle to a device-side representation.
+          * @param out A pointer to write the output to.
+        **/
+        void CL(cl_triangle *out);
+};
+
+struct BVHFlatNode
+{
+	AABB bbox;
+	uint32_t start, nPrims, rightOffset;
+};
+
+struct BVHBuildEntry {
+ // If non-zero then this is the index of the parent. (used in offsets)
+ uint32_t parent;
+ // The range of objects in the object list covered by this node.
+ uint32_t start, end;
+};
+
+void BuildBVH(std::vector<Triangle*>& list, uint32_t leafSize,
+              uint32_t* leafCount, uint32_t* nodeCount,
+              BVHFlatNode** bvhTree)
+{
+ BVHBuildEntry todo[128];
+ uint32_t stackptr = 0;
+	const uint32_t Untouched    = 0xffffffff;
+	const uint32_t TouchedTwice = 0xfffffffd;
+
+ // Push the root
+ todo[stackptr].start = 0;
+ todo[stackptr].end = list.size();
+ todo[stackptr].parent = 0xfffffffc;
+ stackptr++;
+
+	BVHFlatNode node;
+	std::vector<BVHFlatNode> buildnodes;
+	buildnodes.reserve(list.size()*2);
+
+ while(stackptr > 0) {
+		// Pop the next item off of the stack
+		BVHBuildEntry &bnode( todo[--stackptr] );
+		uint32_t start = bnode.start;
+		uint32_t end = bnode.end;
+		uint32_t nPrims = end - start;
+
+		(*nodeCount)++;
+		node.start = start;
+		node.nPrims = nPrims;
+		node.rightOffset = Untouched;
+
+		// Calculate the bounding box for this node
+		AABB bb( list[start]->BoundingBox());
+		AABB bc( list[start]->Centroid());
+		for(uint32_t p = start+1; p < end; ++p) {
+			bb.ExpandToInclude( list[p]->BoundingBox());
+			bc.ExpandToInclude( list[p]->Centroid());
+		}
+		node.bbox = bb;
+
+  // If the number of primitives at this point is less than the leaf
+  // size, then this will become a leaf. (Signified by rightOffset == 0)
+		if(nPrims <= leafSize) {
+			node.rightOffset = 0;
+		    (*leafCount)++;
+		}
+
+		buildnodes.push_back(node);
+
+		// Child touches parent...
+		// Special case: Don't do this for the root.
+		if(bnode.parent != 0xfffffffc) {
+			buildnodes[bnode.parent].rightOffset --;
+
+			// When this is the second touch, this is the right child.
+			// The right child sets up the offset for the flat tree.
+			if( buildnodes[bnode.parent].rightOffset == TouchedTwice ) {
+				buildnodes[bnode.parent].rightOffset = *nodeCount - 1 - bnode.parent;
+			}
+		}
+
+		// If this is a leaf, no need to subdivide.
+		if(node.rightOffset == 0)
+			continue;
+
+		// Set the split dimensions
+		uint32_t split_dim = bc.Split();
+
+		// Split on the center of the longest axis
+		float split_coord = .5f * (bc.min[split_dim] + bc.max[split_dim]);
+
+		// Partition the list of objects on this split
+		uint32_t mid = start;
+		for(uint32_t i=start;i<end;++i) {
+			if( list[i]->Centroid()[split_dim] < split_coord ) {
+				std::swap( list[i], list[mid] );
+				++mid;
+			}
+		}
+
+		// If we get a bad split, just choose the center...
+		if(mid == start || mid == end) {
+			mid = start + (end-start)/2;
+		}
+
+		// Push right child
+		todo[stackptr].start = mid;
+		todo[stackptr].end = end;
+		todo[stackptr].parent = (*nodeCount)-1;
+		stackptr++;
+
+		// Push left child
+		todo[stackptr].start = start;
+		todo[stackptr].end = mid;
+		todo[stackptr].parent = (*nodeCount)-1;
+		stackptr++;
+ }
+
+	// Copy the temp node data to a flat array
+	*bvhTree = new BVHFlatNode[*nodeCount];
+	for(uint32_t n=0; n<*nodeCount; ++n)
+		(*bvhTree)[n] = buildnodes[n];
+}
 
 /* This will create a triangle from three distinct vertices, and produce some *
  * precomputed values for use in other rendering subsystems.                  */
@@ -297,115 +470,4 @@ void Geometry::Update(size_t /* index */) { return; }
 void* Geometry::Query(size_t query)
 {
     return (query == Query::TriangleCount) ? &this->count : nullptr;
-}
-
-struct BVHBuildEntry {
- // If non-zero then this is the index of the parent. (used in offsets)
- uint32_t parent;
- // The range of objects in the object list covered by this node.
- uint32_t start, end;
-};
-
-void Geometry::BuildBVH(std::vector<Triangle*>& list, uint32_t leafSize,
-                        uint32_t* leafCount, uint32_t* nodeCount,
-                        BVHFlatNode** bvhTree)
-{
- BVHBuildEntry todo[128];
- uint32_t stackptr = 0;
-	const uint32_t Untouched    = 0xffffffff;
-	const uint32_t TouchedTwice = 0xfffffffd;
-
- // Push the root
- todo[stackptr].start = 0;
- todo[stackptr].end = list.size();
- todo[stackptr].parent = 0xfffffffc;
- stackptr++;
-
-	BVHFlatNode node;
-	std::vector<BVHFlatNode> buildnodes;
-	buildnodes.reserve(list.size()*2);
-
- while(stackptr > 0) {
-		// Pop the next item off of the stack
-		BVHBuildEntry &bnode( todo[--stackptr] );
-		uint32_t start = bnode.start;
-		uint32_t end = bnode.end;
-		uint32_t nPrims = end - start;
-
-		(*nodeCount)++;
-		node.start = start;
-		node.nPrims = nPrims;
-		node.rightOffset = Untouched;
-
-		// Calculate the bounding box for this node
-		AABB bb( list[start]->BoundingBox());
-		AABB bc( list[start]->Centroid());
-		for(uint32_t p = start+1; p < end; ++p) {
-			bb.ExpandToInclude( list[p]->BoundingBox());
-			bc.ExpandToInclude( list[p]->Centroid());
-		}
-		node.bbox = bb;
-
-  // If the number of primitives at this point is less than the leaf
-  // size, then this will become a leaf. (Signified by rightOffset == 0)
-		if(nPrims <= leafSize) {
-			node.rightOffset = 0;
-		    (*leafCount)++;
-		}
-
-		buildnodes.push_back(node);
-
-		// Child touches parent...
-		// Special case: Don't do this for the root.
-		if(bnode.parent != 0xfffffffc) {
-			buildnodes[bnode.parent].rightOffset --;
-
-			// When this is the second touch, this is the right child.
-			// The right child sets up the offset for the flat tree.
-			if( buildnodes[bnode.parent].rightOffset == TouchedTwice ) {
-				buildnodes[bnode.parent].rightOffset = *nodeCount - 1 - bnode.parent;
-			}
-		}
-
-		// If this is a leaf, no need to subdivide.
-		if(node.rightOffset == 0)
-			continue;
-
-		// Set the split dimensions
-		uint32_t split_dim = bc.Split();
-
-		// Split on the center of the longest axis
-		float split_coord = .5f * (bc.min[split_dim] + bc.max[split_dim]);
-
-		// Partition the list of objects on this split
-		uint32_t mid = start;
-		for(uint32_t i=start;i<end;++i) {
-			if( list[i]->Centroid()[split_dim] < split_coord ) {
-				std::swap( list[i], list[mid] );
-				++mid;
-			}
-		}
-
-		// If we get a bad split, just choose the center...
-		if(mid == start || mid == end) {
-			mid = start + (end-start)/2;
-		}
-
-		// Push right child
-		todo[stackptr].start = mid;
-		todo[stackptr].end = end;
-		todo[stackptr].parent = (*nodeCount)-1;
-		stackptr++;
-
-		// Push left child
-		todo[stackptr].start = start;
-		todo[stackptr].end = mid;
-		todo[stackptr].parent = (*nodeCount)-1;
-		stackptr++;
- }
-
-	// Copy the temp node data to a flat array
-	*bvhTree = new BVHFlatNode[*nodeCount];
-	for(uint32_t n=0; n<*nodeCount; ++n)
-		(*bvhTree)[n] = buildnodes[n];
 }

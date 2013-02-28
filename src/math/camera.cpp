@@ -1,5 +1,5 @@
 #include <math/camera.hpp>
-
+#include <math/vector.hpp>
 #include <misc/xmlutils.hpp>
 #include <misc/pugixml.hpp>
 

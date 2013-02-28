@@ -1,7 +1,6 @@
 #pragma once
 
 #include <engine/architecture.hpp>
-#include <math/vector.hpp>
 
 /** @file camera.hpp
   * @brief Camera manipulation.
