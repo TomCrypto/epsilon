@@ -132,7 +132,6 @@ Troubleshooting
          under the name `PDCurses`. You should be able to find it online - note
          I did not find a prebuilt 64-bit version of this library, so you might
          have to build it yourself if you want 64-bit support.
-
          Now you have the library installed in your favorite compiler, you just
          need to replace `ncurses.h` by `curses.h`, and link to `PDCurses`, not
          `ncurses`, and everthing should now work.
@@ -170,6 +169,14 @@ your perspective) intrusive manner.
   **A**: The current kernel is implemented as an infinite loop for convenience,
          which can cause problems with GPU's. To remedy this, simply change the
          loop  into a `for` construct with, say, 8 or 9 iterations. Try again.
+
+- **Q**: I'm having incomprehensible compilation errors under Windows.
+
+  **A**: I've encountered a situation, under Windows, where many variable names
+         used by the renderer happen to be macros under MinGW, for instance the
+         names `far`, `near`, `interface`, etc... If everything else fails, try
+         renaming those variables something else. But this really should not be
+         happening and a compiler misconfiguration could be the cause.
 
 License
 -------

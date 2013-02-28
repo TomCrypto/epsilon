@@ -275,9 +275,8 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
     pugi::xml_node node = doc.child("geometry");
     leafSize = node.child("general").attribute("leaf").as_int();
 
-    std::set<std::string> materialList;
     std::vector<Triangle*> triangleList;
-    triangleList.reserve(count);
+    std::set<std::string> materialList;
 
     for (pugi::xml_node tri : node.child("data").children("triangle"))
     {
@@ -318,6 +317,10 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 	this->list.push_back(new Triangle(Vector(-2, +4.95, -2), Vector(+2, +4.95, -2), Vector(+2, +4.95, +2), -1));
 	this->list.push_back(new Triangle(Vector(-2, +4.95, -2), Vector(+2, +4.95, +2), Vector(-2, +4.95, +2), -1));
 
+	#endif
+
+	#if 0
+
     std::fstream file;
     GetData("geometry", file);
 
@@ -338,28 +341,12 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 			//if (triangle.material == 3) this->list.push_back(new Triangle(p1, p2, p3, 660));
 			if (triangle.material == 3)
 			{
-				Vector p1 = Vector(triangle.p1[0], triangle.p1[1] + 0.1, triangle.p1[2] - 2);
-				Vector p2 = Vector(triangle.p2[0], triangle.p2[1] + 0.1, triangle.p2[2] - 2);
-				Vector p3 = Vector(triangle.p3[0], triangle.p3[1] + 0.1, triangle.p3[2] - 2);
+				Vector p1 = Vector(triangle.p1[0], triangle.p1[1] + 0.1, triangle.p1[2]);
+				Vector p2 = Vector(triangle.p2[0], triangle.p2[1] + 0.1, triangle.p2[2]);
+				Vector p3 = Vector(triangle.p3[0], triangle.p3[1] + 0.1, triangle.p3[2]);
 
 				triangleList.push_back(new Triangle(p1, p2, p3, ""));
 				triangleList[triangleList.size() - 1]->material = 6;
-
-				p1.z += 10; p2.z += 10; p3.z += 10;
-				p1.x -= 5; p2.x -= 5; p3.x -= 5;
-				p1.y = (p1.y + 5) * 1.3 - 5;
-				p2.y = (p2.y + 5) * 1.3 - 5;
-				p3.y = (p3.y + 5) * 1.3 - 5;
-				triangleList.push_back(new Triangle(p1, p2, p3, ""));
-				triangleList[triangleList.size() - 1]->material = 5;
-
-				p1.z += 25; p2.z += 25; p3.z += 25;
-				p1.x += 16; p2.x += 16; p3.x += 16;		
-				p1.y = (p1.y + 5) / 1.3 - 5;
-				p2.y = (p2.y + 5) / 1.3 - 5;
-				p3.y = (p3.y + 5) / 1.3 - 5;		
-				triangleList.push_back(new Triangle(p1, p2, p3, ""));
-				triangleList[triangleList.size() - 1]->material = 4;
 			}
 
 			/* if (triangle.material == 4)
@@ -382,7 +369,7 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 
     cl_int error;
 
-	fprintf(stderr, "Total %u triangles.\n", (uint32_t)count);
+	fprintf(stderr, "Total %u triangles.\n", count);
     fprintf(stderr, "Now building BVH.\n");
 
     uint32_t leafCount = 0, nodeCount = 0;

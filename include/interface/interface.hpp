@@ -1,7 +1,12 @@
 #pragma once
 
-#include <CL/cl.hpp>
+#ifdef _WIN32
+#include <curses.h>
+#elif __linux__
 #include <ncurses.h>
+#endif
+
+#include <CL/cl.hpp>
 #include <iomanip>
 #include <sstream>
 

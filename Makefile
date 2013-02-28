@@ -5,7 +5,7 @@ CXX = g++
            # The OpenCL C++ wrapper isn't fully 1.2 yet
 CXXFLAGS = -DCL_USE_DEPRECATED_OPENCL_1_1_APIS -Wno-cpp \
            -O3 -std=c++11 -march=native \
-           -Wall -Wextra -pedantic \
+           -Wall -Wextra -pedantic -pipe \
            # -DLOW_RES_TIME # Low-resolution timer
 
 HEADERS = $(shell find include/ -name '*.hpp')
