@@ -14,7 +14,8 @@
   * This file contains the renderer.
   *
   * \todo Clean up geometry (BVH building, specifically).
-  * \todo Clean up pixel buffer code (Pixel object, etc..)
+  * \todo Clean up pixel buffer code (Pixel object, combine PixelBuffer &
+  *       DeviceParams, etc..)
   * \todo When all of the above works perfectly, implement material system &
   *       optimize/document the kernel code.
   *

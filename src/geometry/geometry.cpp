@@ -3,6 +3,7 @@
 #include <misc/pugixml.hpp>
 #include <math/aabb.hpp>
 
+#include <memory>
 #include <set>
 
 struct cl_triangle
@@ -380,26 +381,29 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
     fprintf(stderr, "Number of leaves: %u/%u.\n", leafCount, leafSize);
     fprintf(stderr, "Now compacting BVH.\n");
 
-	cl_node* rawNodes = new cl_node[nodeCount];
-	for (size_t t = 0; t < nodeCount; ++t)
-	{
-		bvhTree[t].bbox.min.CL(&rawNodes[t].bbox_min);
-		bvhTree[t].bbox.max.CL(&rawNodes[t].bbox_max);
-		rawNodes[t].data.s[0] = bvhTree[t].start;
-		rawNodes[t].data.s[1] = bvhTree[t].nPrims;
-		rawNodes[t].data.s[2] = bvhTree[t].rightOffset;
-		rawNodes[t].data.s[3] = 0;
+	{	
+		const std::unique_ptr<cl_node[]> rawNodes(new cl_node[nodeCount]);
+		for (size_t t = 0; t < nodeCount; ++t)
+		{
+			bvhTree[t].bbox.min.CL(&rawNodes[t].bbox_min);
+			bvhTree[t].bbox.max.CL(&rawNodes[t].bbox_max);
+			rawNodes[t].data.s[0] = bvhTree[t].start;
+			rawNodes[t].data.s[1] = bvhTree[t].nPrims;
+			rawNodes[t].data.s[2] = bvhTree[t].rightOffset;
+			rawNodes[t].data.s[3] = 0;
+		}
+
+		fprintf(stderr, "BVH compacted, uploading to device...\n");
+
+		this->nodes = cl::Buffer(params.context,
+								 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+								 sizeof(cl_node) * nodeCount, rawNodes.get(),
+                                 &error);
+		Error::Check(Error::Memory, error);
+
+		fprintf(stderr, "BVH uploaded! Freeing resources.\n");
 	}
 
-	fprintf(stderr, "BVH compacted, uploading to device...\n");
-
-	this->nodes = cl::Buffer(params.context,
-							 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-						     sizeof(cl_node) * nodeCount, rawNodes, &error);
-	Error::Check(Error::Memory, error);
-
-	fprintf(stderr, "BVH uploaded! Freeing resources.\n");
-	delete[] rawNodes;
     delete[] bvhTree;
 
 	fprintf(stderr, "Compacting triangle list.\n");
