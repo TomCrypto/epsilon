@@ -119,7 +119,7 @@ bool Intersect(float3 origin, float3 direction, float* distance, int* hit,
 
 typedef struct __attribute__ ((packed)) Params
 {
-	uint width, height;
+	uint width, height, pass;
 } Params;
 
 typedef struct __attribute__ ((packed)) SceneInfo
@@ -191,6 +191,7 @@ void kernel clmain(global float4 *render, /* Render buffer in XYZn format. */
 
     /* Select random wavelength. */
     float wavelength = rand(&prng);
+	//float wavelength = (params->pass % 81) / 80.0f;
 
     /* Repeat until we die. */
     float radiance = 0.0f;

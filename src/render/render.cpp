@@ -2,13 +2,13 @@
 
 struct __attribute__ ((packed)) cl_buffer
 {
-    cl_uint width, height;
+    cl_uint width, height, pass;
 };
 
 DeviceParams::DeviceParams(EngineParams& params) : KernelObject(params)
 {
     fprintf(stderr, "Initializing <DeviceParams>...");
-    cl_buffer data = { (cl_uint)params.width, (cl_uint)params.height };
+    cl_buffer data = { (cl_uint)params.width, (cl_uint)params.height, 0 };
 
     cl_int error;
     this->buffer = cl::Buffer(params.context,
@@ -25,8 +25,13 @@ void DeviceParams::Bind(cl_uint* index)
 	(*index)++;
 }
 
-void DeviceParams::Update(size_t /* index */)
+void DeviceParams::Update(size_t index)
 {
+	cl_uint pass = (cl_uint)index;
+	cl_buffer x = { (cl_uint)params.width, (cl_uint)params.height, pass };
+	params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
+                                    sizeof(cl_buffer), &x);
+
     return;
 }
 

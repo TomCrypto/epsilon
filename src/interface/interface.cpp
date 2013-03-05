@@ -313,11 +313,13 @@ void Interface::GiveStatistics(Statistics statistics)
     /* This is just to make sure we don't get issues. */
     if (statistics.progress == 1.0) statistics.remains = 0.0;
 
+	std::stringstream ss;
+	ss << "Triangles: " << statistics.tris << ", ";
+
 	/* Is there enough data? */
 	if (statistics.elapsed < 1)
 	{
-		std::stringstream ss;
-		ss << "Triangles: " << statistics.tris << ", no statistics available.";
+		ss << "no statistics available.";
 		attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
 		WriteLine(LINE_STATISTICS, ss.str());
 	}
@@ -326,14 +328,13 @@ void Interface::GiveStatistics(Statistics statistics)
         /* Compute the pass speed (over all pixels) and the total number of
          * pixel passes (those quantities are related, the latter is in fact
          * independent of render width/height and so more accurate). */
-		double pass_speed = passes * statistics.progress / statistics.elapsed;
+		double done = statistics.progress / statistics.elapsed;
+		double pass_speed = passes * done;
 		double speed = width * height * pass_speed * 1e-6;
 
-		std::stringstream ss;
 		ss << std::fixed;
         ss.precision(1);
 
-		ss << "Triangles: " << statistics.tris << ", ";
         ss << pass_speed << " passes/second [" << speed << " MPP/s]";
 		attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
 		WriteLine(LINE_STATISTICS, ss.str());

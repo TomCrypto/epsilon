@@ -29,5 +29,5 @@ clean:
 	@echo Cleaning $(EXECUTABLE)...
 	@rm -f $(addprefix bin/, $(EXECUTABLE))
 	@rm -f obj/ --recursive
-	@rmdir bin/
+	@rm -f bin/
 

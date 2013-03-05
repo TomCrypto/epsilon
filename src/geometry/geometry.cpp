@@ -260,6 +260,10 @@ struct __attribute__ ((packed)) cl_node
 	cl_uint4 data; // start || nPrims || rightOffset
 };
 
+#include <sstream>
+
+template <typename T> std::string tostr(const T& t) { std::ostringstream os; os<<t; return os.str(); }
+
 Geometry::Geometry(EngineParams& params) : KernelObject(params)
 {
     fprintf(stderr, "Initializing <Geometry>.\n");
@@ -291,6 +295,7 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
         ++count;
     }
 
+	/* MatID / MatIndex conversion. */
     for (size_t t = 0; t < count; ++t)
     {
         size_t index;
@@ -298,75 +303,6 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
         index = std::distance(materialList.begin(), materialList.find(m));
         triangleList[t]->material = index;
     }
-
-    /* READ GEOMETRY DATA HERE. */
-
-    #if 0
-
-	this->list.push_back(new Triangle(Vector(-5, -5, -20), Vector(+5, -5, -20), Vector(+5, -5, +5), 0));
-	this->list.push_back(new Triangle(Vector(-5, -5, -20), Vector(+5, -5, +5), Vector(-5, -5, +5), 0));
-	this->list.push_back(new Triangle(Vector(-5, -5, -20), Vector(-5, -5, +5), Vector(-5, +5, +5), 440));
-	this->list.push_back(new Triangle(Vector(-5, -5, -20), Vector(-5, +5, +5), Vector(-5, +5, -20), 440));
-	this->list.push_back(new Triangle(Vector(+5, -5, -20), Vector(+5, -5, +5), Vector(+5, +5, +5), 660));
-	this->list.push_back(new Triangle(Vector(+5, -5, -20), Vector(+5, +5, +5), Vector(+5, +5, -20), 660));
-	this->list.push_back(new Triangle(Vector(-5, -5, +5), Vector(+5, -5, +5), Vector(+5, +5, +5), 0));
-	this->list.push_back(new Triangle(Vector(-5, -5, +5), Vector(+5, +5, +5), Vector(-5, +5, +5), 0));
-
-	this->list.push_back(new Triangle(Vector(-5, +5, -20), Vector(+5, +5, -20), Vector(+5, +5, +5), 0));
-	this->list.push_back(new Triangle(Vector(-5, +5, -20), Vector(+5, +5, +5), Vector(-5, +5, +5), 0));
-
-	this->list.push_back(new Triangle(Vector(-2, +4.95, -2), Vector(+2, +4.95, -2), Vector(+2, +4.95, +2), -1));
-	this->list.push_back(new Triangle(Vector(-2, +4.95, -2), Vector(+2, +4.95, +2), Vector(-2, +4.95, +2), -1));
-
-	#endif
-
-	#if 0
-
-    std::fstream file;
-    GetData("geometry", file);
-
-	/* Read every scene entity in the file. */
-    EntityHeader header;
-    while (ReadHeader(file, &header))
-    {
-        /* Check the entity type to know what to do. */
-		if (header.type == PRIMITIVE)
-		{
-			LambdaTriangle triangle;
-			file.read((char*)&triangle, sizeof(LambdaTriangle));
-
-			/* Vector p1 = Vector(triangle.p1[0] + 1.5, triangle.p1[1] + 0.1, triangle.p1[2] - 6);
-			Vector p2 = Vector(triangle.p2[0] + 1.5, triangle.p2[1] + 0.1, triangle.p2[2] - 6);
-			Vector p3 = Vector(triangle.p3[0] + 1.5, triangle.p3[1] + 0.1, triangle.p3[2] - 6); */
-
-			//if (triangle.material == 3) this->list.push_back(new Triangle(p1, p2, p3, 660));
-			if (triangle.material == 3)
-			{
-				Vector p1 = Vector(triangle.p1[0], triangle.p1[1] + 0.1, triangle.p1[2]);
-				Vector p2 = Vector(triangle.p2[0], triangle.p2[1] + 0.1, triangle.p2[2]);
-				Vector p3 = Vector(triangle.p3[0], triangle.p3[1] + 0.1, triangle.p3[2]);
-
-				triangleList.push_back(new Triangle(p1, p2, p3, ""));
-				triangleList[triangleList.size() - 1]->material = 6;
-			}
-
-			/* if (triangle.material == 4)
-			{
-				Vector p1 = Vector(triangle.p1[0], triangle.p1[1], triangle.p1[2]);
-				Vector p2 = Vector(triangle.p2[0], triangle.p2[1], triangle.p2[2]);
-				Vector p3 = Vector(triangle.p3[0], triangle.p3[1], triangle.p3[2]);
-
-				triangleList.push_back(new Triangle(p1, p2, p3, ""));
-				triangleList[triangleList.size() - 1]->material = 6;
-			} */
-		}
-    }
-
-	file.close();	
-
-	count = triangleList.size();
-
-	#endif
 
     cl_int error;
 
