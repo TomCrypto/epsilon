@@ -118,10 +118,10 @@ either for testing or compatibility - simply override the makefile, as follows:
 
 And then rebuild all. The currently available build flags are listed below:
 
-- `LOW_RES_TIME`: disables all high-resolution timers, and replaces them with a
-                  low-resolution (seconds only), but portable timer. Linux only
-                  as Windows has guaranteed high-resolution timer support - but
-                  this flag should still take effect under Windows.
+- `LOW_RES_TIMER`: disables all high-resolution timers and replaces them with a
+                   low-resolution (seconds only), but portable timer. For Linux
+                   as Windows has guaranteed high-resolution timer support, but
+                   this flag should still take effect under Windows.
 
 Troubleshooting
 ---------------

@@ -11,7 +11,7 @@ Progress::Progress(EngineParams& params) : KernelObject(params)
 
 void Progress::Bind(cl_uint* /* index */)
 {
-    #ifdef LOW_RES_TIME
+    #ifdef LOW_RES_TIMER
     startTime = time(nullptr);
     #else
     timespec time;
@@ -24,7 +24,7 @@ void Progress::Update(size_t pass)
 {
     this->progress = (double)(pass + 1) / params.passes;
 
-    #ifdef LOW_RES_TIME
+    #ifdef LOW_RES_TIMER
     time_t now = time(nullptr);
     #else
     timespec now;
@@ -32,7 +32,7 @@ void Progress::Update(size_t pass)
     double time = now.tv_sec + now.tv_nsec * 1e-9;
     #endif
 
-    #ifdef LOW_RES_TIME
+    #ifdef LOW_RES_TIMER
     elapsed = difftime(now, startTime);
     #else
     elapsed = time - startTime;
