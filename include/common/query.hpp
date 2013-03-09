@@ -29,7 +29,7 @@ namespace Query
     **/
     extern const size_t EstimatedTime;
 
-	/** @brief Queries the time elapsed since rendering started.
+    /** @brief Queries the time elapsed since rendering started.
       * @note \c Query will return a \c double representing the number of
               seconds elapsed since the renderer started working.
     **/

@@ -21,7 +21,7 @@ void PRNG::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <buffer@PRNG> to slot %u.\n", *index);
     Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
-	(*index)++;
+    (*index)++;
 }
 
 void PRNG::Update(size_t /* index */)

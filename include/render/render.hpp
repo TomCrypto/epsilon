@@ -34,16 +34,16 @@ struct Pixel
                     this->z * 0.0085);
         }
 
-		/* Gamma-corrects the pixel. Valid for RGB format only. */
-		void GammaCorrect()
-		{
-			if (this->x >= 0.018) this->x = (1.099 * pow(this->x, 0.45)) - 0.099;
-        	else this->x *= ((1.099 * pow(0.018, 0.45)) - 0.099) / 0.018;
-        	if (this->y >= 0.018) this->y = (1.099 * pow(this->y, 0.45)) - 0.099;
-        	else this->y *= ((1.099 * pow(0.018, 0.45)) - 0.099) / 0.018;
-        	if (this->z >= 0.018) this->z = (1.099 * pow(this->z, 0.45)) - 0.099;
-        	else this->z *= ((1.099 * pow(0.018, 0.45)) - 0.099) / 0.018;
-		}
+        /* Gamma-corrects the pixel. Valid for RGB format only. */
+        void GammaCorrect()
+        {
+            if (this->x >= 0.018) this->x = (1.099 * pow(this->x, 0.45)) - 0.099;
+            else this->x *= ((1.099 * pow(0.018, 0.45)) - 0.099) / 0.018;
+            if (this->y >= 0.018) this->y = (1.099 * pow(this->y, 0.45)) - 0.099;
+            else this->y *= ((1.099 * pow(0.018, 0.45)) - 0.099) / 0.018;
+            if (this->z >= 0.018) this->z = (1.099 * pow(this->z, 0.45)) - 0.099;
+            else this->z *= ((1.099 * pow(0.018, 0.45)) - 0.099) / 0.018;
+        }
 
         /* Converts the pixel from XYZr format to RGB format. */
         void XYZToRGB()

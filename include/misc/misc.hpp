@@ -26,13 +26,13 @@ class Progress : public KernelObject
         #else
         double startTime;
         #endif
-		double elapsed;
+        double elapsed;
         double progress;
         double remains;
 
     public:
-		Progress(EngineParams& params);
-		~Progress() { }
+        Progress(EngineParams& params);
+        ~Progress() { }
 
         void Bind(cl_uint* index);
         void Update(size_t index);

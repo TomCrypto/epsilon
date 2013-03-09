@@ -12,9 +12,9 @@ struct cl_triangle
     cl_float4 x; /* The "left" triangle edge. */
     cl_float4 y; /* The other triangle edge.  */
     cl_float4 t; /* The triangle's tangent.   */
-	cl_float4 b; /* The triangle's bitangent. */
-	cl_float4 n; /* The triangle's normal.    */
-	cl_int mat;  /* The triangle's material.  */
+    cl_float4 b; /* The triangle's bitangent. */
+    cl_float4 n; /* The triangle's normal.    */
+    cl_int mat;  /* The triangle's material.  */
 };
 
 
@@ -32,7 +32,7 @@ class Triangle
         AABB boundingBox;
         Vector centroid;
         Vector x, y, n;
-		Vector t, b;
+        Vector t, b;
 
     public:
         /** @brief The triangle's material ID. **/
@@ -62,8 +62,8 @@ class Triangle
 
 struct BVHFlatNode
 {
-	AABB bbox;
-	uint32_t start, nPrims, rightOffset;
+    AABB bbox;
+    uint32_t start, nPrims, rightOffset;
 };
 
 struct BVHBuildEntry {
@@ -79,8 +79,8 @@ void BuildBVH(std::vector<Triangle*>& list, uint32_t leafSize,
 {
  BVHBuildEntry todo[128];
  uint32_t stackptr = 0;
-	const uint32_t Untouched    = 0xffffffff;
-	const uint32_t TouchedTwice = 0xfffffffd;
+    const uint32_t Untouched    = 0xffffffff;
+    const uint32_t TouchedTwice = 0xfffffffd;
 
  // Push the root
  todo[stackptr].start = 0;
@@ -88,93 +88,93 @@ void BuildBVH(std::vector<Triangle*>& list, uint32_t leafSize,
  todo[stackptr].parent = 0xfffffffc;
  stackptr++;
 
-	BVHFlatNode node;
-	std::vector<BVHFlatNode> buildnodes;
-	buildnodes.reserve(list.size()*2);
+    BVHFlatNode node;
+    std::vector<BVHFlatNode> buildnodes;
+    buildnodes.reserve(list.size()*2);
 
  while(stackptr > 0) {
-		// Pop the next item off of the stack
-		BVHBuildEntry &bnode( todo[--stackptr] );
-		uint32_t start = bnode.start;
-		uint32_t end = bnode.end;
-		uint32_t nPrims = end - start;
+        // Pop the next item off of the stack
+        BVHBuildEntry &bnode( todo[--stackptr] );
+        uint32_t start = bnode.start;
+        uint32_t end = bnode.end;
+        uint32_t nPrims = end - start;
 
-		(*nodeCount)++;
-		node.start = start;
-		node.nPrims = nPrims;
-		node.rightOffset = Untouched;
+        (*nodeCount)++;
+        node.start = start;
+        node.nPrims = nPrims;
+        node.rightOffset = Untouched;
 
-		// Calculate the bounding box for this node
-		AABB bb( list[start]->BoundingBox());
-		AABB bc( list[start]->Centroid());
-		for(uint32_t p = start+1; p < end; ++p) {
-			bb.ExpandToInclude( list[p]->BoundingBox());
-			bc.ExpandToInclude( list[p]->Centroid());
-		}
-		node.bbox = bb;
+        // Calculate the bounding box for this node
+        AABB bb( list[start]->BoundingBox());
+        AABB bc( list[start]->Centroid());
+        for(uint32_t p = start+1; p < end; ++p) {
+            bb.ExpandToInclude( list[p]->BoundingBox());
+            bc.ExpandToInclude( list[p]->Centroid());
+        }
+        node.bbox = bb;
 
   // If the number of primitives at this point is less than the leaf
   // size, then this will become a leaf. (Signified by rightOffset == 0)
-		if(nPrims <= leafSize) {
-			node.rightOffset = 0;
-		    (*leafCount)++;
-		}
+        if(nPrims <= leafSize) {
+            node.rightOffset = 0;
+            (*leafCount)++;
+        }
 
-		buildnodes.push_back(node);
+        buildnodes.push_back(node);
 
-		// Child touches parent...
-		// Special case: Don't do this for the root.
-		if(bnode.parent != 0xfffffffc) {
-			buildnodes[bnode.parent].rightOffset --;
+        // Child touches parent...
+        // Special case: Don't do this for the root.
+        if(bnode.parent != 0xfffffffc) {
+            buildnodes[bnode.parent].rightOffset --;
 
-			// When this is the second touch, this is the right child.
-			// The right child sets up the offset for the flat tree.
-			if( buildnodes[bnode.parent].rightOffset == TouchedTwice ) {
-				buildnodes[bnode.parent].rightOffset = *nodeCount - 1 - bnode.parent;
-			}
-		}
+            // When this is the second touch, this is the right child.
+            // The right child sets up the offset for the flat tree.
+            if( buildnodes[bnode.parent].rightOffset == TouchedTwice ) {
+                buildnodes[bnode.parent].rightOffset = *nodeCount - 1 - bnode.parent;
+            }
+        }
 
-		// If this is a leaf, no need to subdivide.
-		if(node.rightOffset == 0)
-			continue;
+        // If this is a leaf, no need to subdivide.
+        if(node.rightOffset == 0)
+            continue;
 
-		// Set the split dimensions
-		uint32_t split_dim = bc.Split();
+        // Set the split dimensions
+        uint32_t split_dim = bc.Split();
 
-		// Split on the center of the longest axis
-		float split_coord = .5f * (bc.min[split_dim] + bc.max[split_dim]);
+        // Split on the center of the longest axis
+        float split_coord = .5f * (bc.min[split_dim] + bc.max[split_dim]);
 
-		// Partition the list of objects on this split
-		uint32_t mid = start;
-		for(uint32_t i=start;i<end;++i) {
-			if( list[i]->Centroid()[split_dim] < split_coord ) {
-				std::swap( list[i], list[mid] );
-				++mid;
-			}
-		}
+        // Partition the list of objects on this split
+        uint32_t mid = start;
+        for(uint32_t i=start;i<end;++i) {
+            if( list[i]->Centroid()[split_dim] < split_coord ) {
+                std::swap( list[i], list[mid] );
+                ++mid;
+            }
+        }
 
-		// If we get a bad split, just choose the center...
-		if(mid == start || mid == end) {
-			mid = start + (end-start)/2;
-		}
+        // If we get a bad split, just choose the center...
+        if(mid == start || mid == end) {
+            mid = start + (end-start)/2;
+        }
 
-		// Push right child
-		todo[stackptr].start = mid;
-		todo[stackptr].end = end;
-		todo[stackptr].parent = (*nodeCount)-1;
-		stackptr++;
+        // Push right child
+        todo[stackptr].start = mid;
+        todo[stackptr].end = end;
+        todo[stackptr].parent = (*nodeCount)-1;
+        stackptr++;
 
-		// Push left child
-		todo[stackptr].start = start;
-		todo[stackptr].end = mid;
-		todo[stackptr].parent = (*nodeCount)-1;
-		stackptr++;
+        // Push left child
+        todo[stackptr].start = start;
+        todo[stackptr].end = mid;
+        todo[stackptr].parent = (*nodeCount)-1;
+        stackptr++;
  }
 
-	// Copy the temp node data to a flat array
-	*bvhTree = new BVHFlatNode[*nodeCount];
-	for(uint32_t n=0; n<*nodeCount; ++n)
-		(*bvhTree)[n] = buildnodes[n];
+    // Copy the temp node data to a flat array
+    *bvhTree = new BVHFlatNode[*nodeCount];
+    for(uint32_t n=0; n<*nodeCount; ++n)
+        (*bvhTree)[n] = buildnodes[n];
 }
 
 /* This will create a triangle from three distinct vertices, and produce some *
@@ -189,11 +189,11 @@ Triangle::Triangle(Vector p1, Vector p2, Vector p3, uint32_t material)
     /* Compute unsigned normal from the edges. */
     this->n = normalize(cross(this->x, this->y));
 
-	/* Compute the triangle's TBN matrix. */
-	this->t = normalize(this->x);
-	this->b = normalize(cross(this->t, this->n));
+    /* Compute the triangle's TBN matrix. */
+    this->t = normalize(this->x);
+    this->b = normalize(cross(this->t, this->n));
 
-	/* Compute the triangle's bounding box. */
+    /* Compute the triangle's bounding box. */
     Vector lo = Vector(std::min(p1.x, std::min(p2.x, p3.x)),
                        std::min(p1.y, std::min(p2.y, p3.y)),
                        std::min(p1.z, std::min(p2.z, p3.z)));
@@ -205,7 +205,7 @@ Triangle::Triangle(Vector p1, Vector p2, Vector p3, uint32_t material)
     /* Compute the triangle's centroid. */
     this->centroid = (p1 + p2 + p3) / 3.0f;
 
-	this->material = material;
+    this->material = material;
 }
 
 /* This will format the triangle for export to the OpenCL device, with enough *
@@ -217,8 +217,8 @@ void Triangle::CL(cl_triangle *out)
     p1.CL(&out->p);
     x.CL(&out->x);
     y.CL(&out->y);
-	t.CL(&out->t);
-	b.CL(&out->b);
+    t.CL(&out->t);
+    b.CL(&out->b);
     n.CL(&out->n);
 }
 
@@ -226,9 +226,9 @@ void Triangle::CL(cl_triangle *out)
 
 struct __attribute__ ((packed)) cl_node
 {
-	cl_float4 bbox_min;
-	cl_float4 bbox_max;
-	cl_uint4 data; // start || nPrims || rightOffset
+    cl_float4 bbox_min;
+    cl_float4 bbox_max;
+    cl_uint4 data; // start || nPrims || rightOffset
 };
 
 #include <sstream>
@@ -252,7 +252,7 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
     leafSize = node.child("general").attribute("leaf").as_int();
 
     std::vector<Triangle*> triangleList;
-	this->count = 0;
+    this->count = 0;
 
     for (pugi::xml_node tri : node.child("data").children("triangle"))
     {
@@ -267,7 +267,7 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 
     cl_int error;
 
-	fprintf(stderr, "Total %u triangles.\n", count);
+    fprintf(stderr, "Total %u triangles.\n", count);
     fprintf(stderr, "Now building BVH.\n");
 
     uint32_t leafCount = 0, nodeCount = 0;
@@ -278,37 +278,37 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
     fprintf(stderr, "Number of leaves: %u/%u.\n", leafCount, leafSize);
     fprintf(stderr, "Now compacting BVH.\n");
 
-	{	
-		const std::unique_ptr<cl_node[]> rawNodes(new cl_node[nodeCount]);
-		for (size_t t = 0; t < nodeCount; ++t)
-		{
-			bvhTree[t].bbox.min.CL(&rawNodes[t].bbox_min);
-			bvhTree[t].bbox.max.CL(&rawNodes[t].bbox_max);
-			rawNodes[t].data.s[0] = bvhTree[t].start;
-			rawNodes[t].data.s[1] = bvhTree[t].nPrims;
-			rawNodes[t].data.s[2] = bvhTree[t].rightOffset;
-			rawNodes[t].data.s[3] = 0;
-		}
+    {    
+        const std::unique_ptr<cl_node[]> rawNodes(new cl_node[nodeCount]);
+        for (size_t t = 0; t < nodeCount; ++t)
+        {
+            bvhTree[t].bbox.min.CL(&rawNodes[t].bbox_min);
+            bvhTree[t].bbox.max.CL(&rawNodes[t].bbox_max);
+            rawNodes[t].data.s[0] = bvhTree[t].start;
+            rawNodes[t].data.s[1] = bvhTree[t].nPrims;
+            rawNodes[t].data.s[2] = bvhTree[t].rightOffset;
+            rawNodes[t].data.s[3] = 0;
+        }
 
-		fprintf(stderr, "BVH compacted, uploading to device...\n");
+        fprintf(stderr, "BVH compacted, uploading to device...\n");
 
-		this->nodes = cl::Buffer(params.context,
-								 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-								 sizeof(cl_node) * nodeCount, rawNodes.get(),
+        this->nodes = cl::Buffer(params.context,
+                                 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                                 sizeof(cl_node) * nodeCount, rawNodes.get(),
                                  &error);
-		Error::Check(Error::Memory, error);
+        Error::Check(Error::Memory, error);
 
-		fprintf(stderr, "BVH uploaded! Freeing resources.\n");
-	}
+        fprintf(stderr, "BVH uploaded! Freeing resources.\n");
+    }
 
     delete[] bvhTree;
 
-	fprintf(stderr, "Compacting triangle list.\n");
+    fprintf(stderr, "Compacting triangle list.\n");
 
     cl_triangle* raw = new cl_triangle[count];
     for (size_t t = 0; t < count; ++t) triangleList[t]->CL(raw + t);
 
-	fprintf(stderr, "Triangles compacted, uploading to device...\n");
+    fprintf(stderr, "Triangles compacted, uploading to device...\n");
 
     this->triangles = cl::Buffer(params.context,
                                  CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
@@ -316,9 +316,9 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
                                  raw, &error);
     Error::Check(Error::Memory, error);
 
-	fprintf(stderr, "Triangle data uploaded! Freeing resources.\n");
+    fprintf(stderr, "Triangle data uploaded! Freeing resources.\n");
     for (size_t t = 0; t < count; ++t) delete triangleList[t];
-	delete [] raw;
+    delete [] raw;
 
     fprintf(stderr, "Initialization complete.\n\n");
     stream.close();
@@ -326,7 +326,7 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 
 Geometry::~Geometry()
 {
-	// nothing here
+    // nothing here
 }
 
 void Geometry::Bind(cl_uint* index)
@@ -335,7 +335,7 @@ void Geometry::Bind(cl_uint* index)
     Error::Check(Error::Bind, params.kernel.setArg(*index, this->triangles));
     (*index)++;
     fprintf(stderr, "Binding <nodes@Geometry> to index %u.\n", *index);
-	Error::Check(Error::Bind, params.kernel.setArg(*index, this->nodes));
+    Error::Check(Error::Bind, params.kernel.setArg(*index, this->nodes));
     (*index)++;
 }
 

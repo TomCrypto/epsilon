@@ -14,9 +14,9 @@ void Progress::Bind(cl_uint* /* index */)
     #ifdef LOW_RES_TIME
     startTime = time(nullptr);
     #else
-	timespec time;
-	clock_gettime(CLOCK_MONOTONIC, &time);
-	startTime = time.tv_sec + time.tv_nsec * 1e-9;
+    timespec time;
+    clock_gettime(CLOCK_MONOTONIC, &time);
+    startTime = time.tv_sec + time.tv_nsec * 1e-9;
     #endif
 }
 
@@ -27,9 +27,9 @@ void Progress::Update(size_t pass)
     #ifdef LOW_RES_TIME
     time_t now = time(nullptr);
     #else
-	timespec now;
-	clock_gettime(CLOCK_MONOTONIC, &now);
-	double time = now.tv_sec + now.tv_nsec * 1e-9;
+    timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    double time = now.tv_sec + now.tv_nsec * 1e-9;
     #endif
 
     #ifdef LOW_RES_TIME

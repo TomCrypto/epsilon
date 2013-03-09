@@ -53,13 +53,13 @@ struct Vector
       * @return This interprets the vector components as an array of three
       *         elements, as [\c x, \c y, \c z].
     **/
-	float operator [] (int index)
-	{
-		if (index == 0) return x;
-		if (index == 1) return y;
-		if (index == 2) return z;
-		return 0.0f;
-	}
+    float operator [] (int index)
+    {
+        if (index == 0) return x;
+        if (index == 1) return y;
+        if (index == 2) return z;
+        return 0.0f;
+    }
 
     Vector operator + (const Vector& b) const
     {

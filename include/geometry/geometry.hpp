@@ -24,10 +24,10 @@ class Geometry : public KernelObject
         uint32_t count;
 
         /** @brief Describes the BVH leaf size (performance parameter). **/
-		uint32_t leafSize;
+        uint32_t leafSize;
 
         /** @brief Contains the BVH nodes (for traversal). **/
-		cl::Buffer nodes;
+        cl::Buffer nodes;
 
     public:
         Geometry(EngineParams& params);

@@ -35,3 +35,6 @@ excluded/
 
 # Logs
 *.log
+
+# Python tools
+*.py

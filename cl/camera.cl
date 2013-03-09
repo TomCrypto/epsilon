@@ -16,11 +16,11 @@ typedef struct Camera
     /** The camera position. **/
     float3 pos;
     /** The camera's "up" vector. **/
-	float3 up;
+    float3 up;
     /** The camera's "left" vector. **/
     float3 left;
     /** The camera's focal spread (aperture radius). **/
-	float spread;
+    float spread;
 } Camera;
 
 /** Computes a camera ray for a given pixel.
@@ -37,12 +37,12 @@ void Trace(float u, float v, float3 *origin, float3 *direction,
 {
     *origin = camera->pos.xyz;
 
-	*origin += (camera->up.xyz   * cos(x * 2 * 3.14159265f)
+    *origin += (camera->up.xyz   * cos(x * 2 * 3.14159265f)
              +  camera->left.xyz * sin(x * 2 * 3.14159265f))
              * sqrt(y) * camera->spread;
 
     *direction = lerp(lerp(camera->p[0].xyz, camera->p[1].xyz, u),
                       lerp(camera->p[3].xyz, camera->p[2].xyz, u), v);
 
-	*direction = normalize(*direction - *origin);
+    *direction = normalize(*direction - *origin);
 }

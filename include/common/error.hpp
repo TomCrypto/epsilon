@@ -15,7 +15,7 @@
 namespace Error
 {
     /** @brief The available OpenCL platforms could not be enumerated. **/
-	extern const std::string PlatformQuery;
+    extern const std::string PlatformQuery;
     /** @brief The available OpenCL devices could not be enumerated. **/
     extern const std::string DeviceQuery;
     /** @brief Platform information could not be retrieved. **/
@@ -42,7 +42,7 @@ namespace Error
     extern const std::string Kernel;
     /** @brief Kernel execution on the selected device did not succeed. **/
     extern const std::string Execute;
-	/** @brief The CLC build log (if build fails) could not be retrieved. **/
+    /** @brief The CLC build log (if build fails) could not be retrieved. **/
     extern const std::string BuildLog;
 
     /** @brief Throws a formatted exception based on an error code.

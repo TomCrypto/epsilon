@@ -22,7 +22,7 @@ int main(/* int argc, char* argv[] */)
     /* Create an error log to stderr. */
     FILE* log = fopen("error.log", "w");
     dup2(fileno(log), 2);
-	atexit(end);
+    atexit(end);
 
     fprintf(stderr, "--- BEGIN LOG ---\n\n");
 
@@ -45,36 +45,36 @@ int main(/* int argc, char* argv[] */)
     Interface* interface = new Interface();
     Renderer* renderer = nullptr;
 
-	try
-	{
+    try
+    {
         fprintf(stderr, "[+] Waiting for user input.\n");
-		if (!interface->GetInput())
+        if (!interface->GetInput())
             throw std::runtime_error("Invalid parameters.");
 
-		interface->DisplayStatus("Preparing render...", false);
+        interface->DisplayStatus("Preparing render...", false);
 
         fprintf(stderr, "[+] Initializing renderer.\n\n");
-		renderer = new Renderer(interface->width,
+        renderer = new Renderer(interface->width,
                                 interface->height,
                                 interface->passes,
-								interface->platform,
+                                interface->platform,
                                 interface->device,
                                 interface->source,
                                 interface->output);
 
-		interface->DisplayStatus("Rendering...", false);
+        interface->DisplayStatus("Rendering...", false);
 
         fprintf(stderr, "\n[+] Starting render passes.\n\n");
 
         Statistics statistics;
         QueryStatistics(renderer, statistics);
         interface->GiveStatistics(statistics);
-		
+        
         do
-		{
+        {
             QueryStatistics(renderer, statistics);
             interface->GiveStatistics(statistics);
-		}
+        }
         while (!renderer->Execute());
 
         QueryStatistics(renderer, statistics);
@@ -83,22 +83,22 @@ int main(/* int argc, char* argv[] */)
         interface->DisplayStatus("Finalizing render...", false);
         fprintf(stderr, "[+] Finalizing render.\n\n");
 
-		delete renderer;
+        delete renderer;
 
         fprintf(stderr, "\n[+] Renderer successfully terminated.\n");
-		interface->DisplayStatus("Render complete.", false);
-	}
-	catch (std::exception& e)
-	{
+        interface->DisplayStatus("Render complete.", false);
+    }
+    catch (std::exception& e)
+    {
         /* Print error to screen and into log. */
-		interface->DisplayStatus(e.what(), true);
+        interface->DisplayStatus(e.what(), true);
         fprintf(stderr, "\n[EXCEPTION RAISED] ");
         fprintf(stderr, "-> %s\n\n", e.what());
         delete renderer;
         fprintf(stderr, "[+] Killed.\n");
-	}
+    }
 
-	interface->Pause();
-	delete interface;
-	return 0;
+    interface->Pause();
+    delete interface;
+    return 0;
 }

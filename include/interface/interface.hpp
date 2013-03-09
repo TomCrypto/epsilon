@@ -69,15 +69,15 @@ class Interface
         /** @brief Redraws the curses window. **/
         void Redraw();
 
-	public:
+    public:
         /** @brief Engine source (the directory containing the scene). **/
         std::string source;
         /** @brief Engine output (where to save the final render). **/
         std::string output;
         /** @brief OpenCL platform to use for rendering. **/
-		cl::Platform platform;
+        cl::Platform platform;
         /** @brief OpenCL device to use for rendering. **/
-		cl::Device device;
+        cl::Device device;
         /** @brief Render width, in pixels. **/
         size_t width;
         /** @brief Render height, in pixels. **/
@@ -89,7 +89,7 @@ class Interface
         Interface();
 
         /** @brief Frees the interface and all associated resources. **/
-		~Interface();
+        ~Interface();
 
         /** @brief Enables or disables input.
           * @param input If \c true, input is enabled.
@@ -103,11 +103,11 @@ class Interface
           *       ellipsis.
         **/
         void DisplayStatus(std::string msg, bool error);
-		
+        
         /** @brief Takes statistics from the engine and displays them.
           * @param statistics The engine statistics.
         **/
-		void GiveStatistics(Statistics statistics);
+        void GiveStatistics(Statistics statistics);
 
         /** @brief Lets the user select engine parameters.
           * @return Returns \c false if something went wrong, \c true
@@ -115,5 +115,5 @@ class Interface
         bool GetInput();
 
         /** @brief Waits for any key press from the user. **/
-		void Pause();
+        void Pause();
 };

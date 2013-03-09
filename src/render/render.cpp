@@ -21,15 +21,15 @@ DeviceParams::DeviceParams(EngineParams& params) : KernelObject(params)
 void DeviceParams::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <buffer@DeviceParams> to slot %u.\n", *index);
-	Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
-	(*index)++;
+    Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
+    (*index)++;
 }
 
 void DeviceParams::Update(size_t index)
 {
-	cl_uint pass = (cl_uint)index;
-	cl_buffer x = { (cl_uint)params.width, (cl_uint)params.height, pass };
-	params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
+    cl_uint pass = (cl_uint)index;
+    cl_buffer x = { (cl_uint)params.width, (cl_uint)params.height, pass };
+    params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
                                     sizeof(cl_buffer), &x);
 
     return;
@@ -85,8 +85,8 @@ void* PixelBuffer::Query(size_t /* query */)
 void PixelBuffer::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <buffer@PixelBuffer> to slot %u.\n", *index);
-	Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
-	(*index)++;
+    Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
+    (*index)++;
 }
 
 void PixelBuffer::Acquire(const EngineParams& params)
@@ -94,7 +94,7 @@ void PixelBuffer::Acquire(const EngineParams& params)
     cl_int error;
     error = params.queue.enqueueReadBuffer(this->buffer, CL_TRUE, 0,
                                            this->size, this->pixels);
-	Error::Check(Error::CLIO, error);
+    Error::Check(Error::CLIO, error);
 }
 
 void PixelBuffer::Upload(const EngineParams& params)
@@ -102,7 +102,7 @@ void PixelBuffer::Upload(const EngineParams& params)
     cl_int error;
     error = params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
                                             this->size, this->pixels);
-	Error::Check(Error::CLIO, error);
+    Error::Check(Error::CLIO, error);
 }
 
 void PixelBuffer::ConvertToRGB()
@@ -116,28 +116,28 @@ void PixelBuffer::ConvertToRGB()
 
 void PixelBuffer::Tonemap()
 {
-	float logAvg = 0.0f;
-	for (size_t t = 0; t < this->width * this->height; ++t)
+    float logAvg = 0.0f;
+    for (size_t t = 0; t < this->width * this->height; ++t)
     {
         float luminance = this->pixels[t].Luminance();
         logAvg += log(luminance + EPSILON);
-	}
+    }
 
-	logAvg = exp(logAvg / (this->width * this->height));
+    logAvg = exp(logAvg / (this->width * this->height));
     const float exposure = 0.18f;
 
-	for (size_t t = 0; t < this->width * this->height; ++t)
-	{
+    for (size_t t = 0; t < this->width * this->height; ++t)
+    {
         this->pixels[t].Tonemap(logAvg, exposure);
-	}
+    }
 }
 
 void PixelBuffer::GammaCorrect()
 {
-	for (size_t t = 0; t < this->width * this->height; ++t)
-	{
-		this->pixels[t].GammaCorrect();
-	} 
+    for (size_t t = 0; t < this->width * this->height; ++t)
+    {
+        this->pixels[t].GammaCorrect();
+    } 
 }
 
 void PixelBuffer::WriteToFile(std::string path)
@@ -166,8 +166,8 @@ void PixelBuffer::WriteToFile(std::string path)
 /* A XYZp color format (padding float at the end). */
 struct XYZp
 {
-	float x, y, z, p;
-	XYZp(float x, float y, float z) : x(x), y(y), z(z), p(1.0f) { };
+    float x, y, z, p;
+    XYZp(float x, float y, float z) : x(x), y(y), z(z), p(1.0f) { };
 };
 
 Tristimulus::Tristimulus(EngineParams& params) : KernelObject(params)
@@ -202,7 +202,7 @@ void Tristimulus::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <buffer@Tristimulus> to slot %u.\n", *index);
     Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
-	(*index)++;
+    (*index)++;
 }
 
 void Tristimulus::Update(size_t /* index */)

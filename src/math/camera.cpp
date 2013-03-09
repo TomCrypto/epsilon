@@ -8,7 +8,7 @@ struct cl_data
     cl_float4 p[4];     /* Focal plane.                                   */
     cl_float4 pos;      /* Camera position.                               */
     cl_float4 up, left; /* "Up" and "left" vectors (of the camera basis). */
-	cl_float spread;    /* The focal spread, or aperture radius.          */
+    cl_float spread;    /* The focal spread, or aperture radius.          */
 };
 
 Camera::Camera(EngineParams& params) : KernelObject(params)
@@ -16,12 +16,12 @@ Camera::Camera(EngineParams& params) : KernelObject(params)
     fprintf(stderr, "Initializing <Camera>.\n");
     fprintf(stderr, "Loading '*/camera.xml'.\n");
 
-	std::fstream stream;
+    std::fstream stream;
     pugi::xml_document doc;
-	GetData("camera.xml", stream);
+    GetData("camera.xml", stream);
     fprintf(stderr, "Parsing camera parameters...");
 
-	if (!doc.load(stream)) Error::Check(Error::IO, 0, true);
+    if (!doc.load(stream)) Error::Check(Error::IO, 0, true);
     fprintf(stderr, " done.\n");
 
     pugi::xml_node node = doc.child("camera");
@@ -37,17 +37,17 @@ Camera::Camera(EngineParams& params) : KernelObject(params)
     float focalSpread = node.attribute("spread").as_float();
     float focalLength = node.attribute("length").as_float();
 
-	fprintf(stderr, "Camera position = (%.2f, %.2f, %.2f).\n", cameraPos.x,
+    fprintf(stderr, "Camera position = (%.2f, %.2f, %.2f).\n", cameraPos.x,
                                                                cameraPos.y,
                                                                cameraPos.z);
 
-	fprintf(stderr, "Camera target = (%.2f, %.2f, %.2f).\n", cameraTarget.x,
+    fprintf(stderr, "Camera target = (%.2f, %.2f, %.2f).\n", cameraTarget.x,
                                                              cameraTarget.y,
                                                              cameraTarget.z);
 
-	fprintf(stderr, "Field of view = %.2f radians.\n", FOV);
-	fprintf(stderr, "Focal length = %.2f.\n", focalLength);
-	fprintf(stderr, "Focal spread = %.2f.\n", focalSpread);
+    fprintf(stderr, "Field of view = %.2f radians.\n", FOV);
+    fprintf(stderr, "Focal length = %.2f.\n", focalLength);
+    fprintf(stderr, "Focal spread = %.2f.\n", focalSpread);
 
     Vector normal, tangent;
     Basis(dir, &normal, &tangent);
@@ -74,9 +74,9 @@ Camera::Camera(EngineParams& params) : KernelObject(params)
     cl_data data;
     for (size_t t = 0; t < 4; ++t) focalPlane[t].CL(&data.p[t]);
     cameraPos.CL(&data.pos);
-	normal.CL(&data.up);
-	tangent.CL(&data.left);
-	data.spread = focalSpread;
+    normal.CL(&data.up);
+    tangent.CL(&data.left);
+    data.spread = focalSpread;
 
     error = params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
                                             sizeof(cl_data), &data);
@@ -90,7 +90,7 @@ void Camera::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <buffer@Camera> to slot %u.\n", *index);
     Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
-	(*index)++;
+    (*index)++;
 }
 
 void Camera::Update(size_t /* index */) { return; }

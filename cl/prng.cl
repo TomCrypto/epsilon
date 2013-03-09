@@ -67,9 +67,9 @@ void renew(ulong4 *state, constant ulong4 *seed)
 typedef struct PRNG
 {
     /** @brief The 256-bit internal state. **/
-	ulong4 state;
+    ulong4 state;
     /** @brief An integer indicating how much of the state has been used. **/
-	uint pointer;
+    uint pointer;
     /** @brief A pointer to the PRNG's seed, common to all instances. **/
     constant ulong4 *seed;
 } PRNG;

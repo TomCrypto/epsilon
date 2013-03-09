@@ -34,7 +34,7 @@ Interface::Interface()
         init_pair(COLOR_STATUS, COLOR_GREEN, COLOR_BLACK);
     }
 
-	DrawFrame();
+    DrawFrame();
 }
 
 void Interface::WriteLine(size_t line, std::string msg)
@@ -162,7 +162,7 @@ bool Interface::GetInput()
 
     /* Obtain the list of platforms.. */
     std::vector<cl::Platform> platforms;
-	cl::Platform::get(&platforms);
+    cl::Platform::get(&platforms);
 
     platformIndex = 0;
     DisplayStatus("Please select the OpenCL platform (left/right arrow keys).",
@@ -175,7 +175,7 @@ bool Interface::GetInput()
 
         platform = platforms[platformIndex];
         size_t count = platforms.size();
-		
+        
         platform.getInfo(CL_PLATFORM_NAME, &name);
         trim(name);
 
@@ -195,8 +195,8 @@ bool Interface::GetInput()
     DisplayStatus("Please select the OpenCL device.", false);
 
     /* Get the list of devices... */
-	std::vector<cl::Device> devices;
-	platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+    std::vector<cl::Device> devices;
+    platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
 
     key = 0;
     while (key != '\n')
@@ -205,9 +205,9 @@ bool Interface::GetInput()
 
         device = devices[deviceIndex];
         size_t count = devices.size();
-		
+        
         device.getInfo(CL_DEVICE_NAME, &name);
-		trim(name);
+        trim(name);
 
         attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
         WriteLine(LINE_DEVICE, name); /* Again, print device, and index. */
@@ -259,16 +259,16 @@ bool Interface::GetInput()
 void Interface::DisplayProgress(double progress)
 {
     /* Handle the discontinuity here. */
-	size_t prog = (size_t)(progress * 54);
-	size_t count = (prog > 27) ? prog + 6 : prog;
+    size_t prog = (size_t)(progress * 54);
+    size_t count = (prog > 27) ? prog + 6 : prog;
 
-	attron(COLOR_PAIR(COLOR_TITLE1)); attron(A_BOLD);
+    attron(COLOR_PAIR(COLOR_TITLE1)); attron(A_BOLD);
 
     /* Progress bar drawn here. */
-	for (size_t t = 0; t < count; ++t)
+    for (size_t t = 0; t < count; ++t)
         mvaddch(LINE_PROGRESS, 18 + t, ACS_CKBOARD);
 
-	mvprintw(LINE_PROGRESS, 45, " %.3d%% ", (int)(progress * 100));
+    mvprintw(LINE_PROGRESS, 45, " %.3d%% ", (int)(progress * 100));
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
     Redraw();
 }
@@ -289,58 +289,58 @@ std::string TimeToString(size_t seconds)
 
 void Interface::DisplayTime(double remains, double elapsed)
 {
-	attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-	if (remains < 0.0)
+    attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
+    if (remains < 0.0)
     {
         /* Not enough data to estimate time. */
         WriteLine(LINE_ETC, "Calculating...");
     }
-	else
-	{
+    else
+    {
         std::string R = TimeToString((size_t)(remains + 0.5));
         std::string E = TimeToString((size_t)(elapsed + 0.5));
 
         std::string display = "         [" + R + " remains]    ["
                             + E + " elapsed]";
         WriteLine(LINE_ETC, display);
-	}
+    }
 }
 
 void Interface::GiveStatistics(Statistics statistics)
 {
-	DisplayProgress(statistics.progress);
+    DisplayProgress(statistics.progress);
     
     /* This is just to make sure we don't get issues. */
     if (statistics.progress == 1.0) statistics.remains = 0.0;
 
-	std::stringstream ss;
-	ss << "Triangles: " << statistics.tris << ", ";
+    std::stringstream ss;
+    ss << "Triangles: " << statistics.tris << ", ";
 
-	/* Is there enough data? */
-	if (statistics.elapsed < 1)
-	{
-		ss << "no statistics available.";
-		attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-		WriteLine(LINE_STATISTICS, ss.str());
-	}
-	else
-	{
+    /* Is there enough data? */
+    if (statistics.elapsed < 1)
+    {
+        ss << "no statistics available.";
+        attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
+        WriteLine(LINE_STATISTICS, ss.str());
+    }
+    else
+    {
         /* Compute the pass speed (over all pixels) and the total number of
          * pixel passes (those quantities are related, the latter is in fact
          * independent of render width/height and so more accurate). */
-		double done = statistics.progress / statistics.elapsed;
-		double pass_speed = passes * done;
-		double speed = width * height * pass_speed * 1e-6;
+        double done = statistics.progress / statistics.elapsed;
+        double pass_speed = passes * done;
+        double speed = width * height * pass_speed * 1e-6;
 
-		ss << std::fixed;
+        ss << std::fixed;
         ss.precision(1);
 
         ss << pass_speed << " passes/second [" << speed << " MPP/s]";
-		attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-		WriteLine(LINE_STATISTICS, ss.str());
-	}
+        attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
+        WriteLine(LINE_STATISTICS, ss.str());
+    }
 
-	DisplayTime(statistics.remains, statistics.elapsed);
+    DisplayTime(statistics.remains, statistics.elapsed);
     Redraw();
 }
 

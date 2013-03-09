@@ -10,6 +10,9 @@
   * handling code. Each material ID has its own OpenCL file, this is just a
   * giant switch statement. You are meant to add your own material ID's so
   * feel free to edit this file.
+  *
+  * \todo Actually separate different materials in different files. This is
+  *       for testing.
 **/
 
 /** @brief Ambient atmosphere (note \c reflect is never called with this).
