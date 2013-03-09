@@ -1,27 +1,48 @@
-/* Camera structure (device-side). */
+#pragma once
+
+#include <util.cl>
+
+/** @file camera.cl
+  * @brief Kernel camera implementation.
+**/
+
+/** @struct Camera
+  * @brief Camera parameters.
+**/
 typedef struct Camera
 {
+    /** The focal plane, as a quad. **/
     float4 p[4];
-    float4 pos;
-	float4 up, left;
+    /** The camera position. **/
+    float3 pos;
+    /** The camera's "up" vector. **/
+	float3 up;
+    /** The camera's "left" vector. **/
+    float3 left;
+    /** The camera's focal spread (aperture radius). **/
 	float spread;
 } Camera;
 
-float3 lerp(float3 a, float3 b, float t)
-{
-    return a + (b - a) * t;
-}
-
-/* Traces a camera ray from a (u, v) normalized pixel coordinate. */
+/** Computes a camera ray for a given pixel.
+  * @param u The normalized x-coordinate.
+  * @param v The normalized y-coordinate.
+  * @param origin A pointer to the camera ray's origin.
+  * @param direction A pointer to the camera ray's direction, as a unit vector.
+  * @param x A uniform in [0..1).
+  * @param y Another uniform in [0..1).
+  * @param camera The camera parameters.
+**/
 void Trace(float u, float v, float3 *origin, float3 *direction,
-           constant Camera *camera, float u1, float u2)
+           float x, float y, constant Camera *camera)
 {
     *origin = camera->pos.xyz;
 
-	u2 = sqrt(u2);
-	*origin = *origin + camera->up.xyz * cos(u1 * 2 * 3.14159265f) * u2 * camera->spread + camera->left.xyz * sin(u1 * 2 * 3.14159265f) * u2 * camera->spread;
+	*origin += (camera->up.xyz   * cos(x * 2 * 3.14159265f)
+             +  camera->left.xyz * sin(x * 2 * 3.14159265f))
+             * sqrt(y) * camera->spread;
 
     *direction = lerp(lerp(camera->p[0].xyz, camera->p[1].xyz, u),
                       lerp(camera->p[3].xyz, camera->p[2].xyz, u), v);
+
 	*direction = normalize(*direction - *origin);
 }

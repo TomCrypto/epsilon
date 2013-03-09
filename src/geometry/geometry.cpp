@@ -11,8 +11,9 @@ struct cl_triangle
     cl_float4 p; /* The main triangle vertex. */
     cl_float4 x; /* The "left" triangle edge. */
     cl_float4 y; /* The other triangle edge.  */
-    cl_float4 n; /* The triangle's normal.    */
-    // add tangent/bitangent here as well
+    cl_float4 t; /* The triangle's tangent.   */
+	cl_float4 b; /* The triangle's bitangent. */
+	cl_float4 n; /* The triangle's normal.    */
 	cl_int mat;  /* The triangle's material.  */
 };
 
@@ -31,13 +32,11 @@ class Triangle
         AABB boundingBox;
         Vector centroid;
         Vector x, y, n;
+		Vector t, b;
 
     public:
-        /** @brief The triangle's normalized material index. **/
+        /** @brief The triangle's material ID. **/
         uint32_t material;
-
-        /** @brief The triangle's unnormalized material ID (as a string). **/
-        std::string rawMaterial;
 
         /** @brief Creates the triangle from three points (vertices).
           * @param p1 The first vertex.
@@ -45,7 +44,7 @@ class Triangle
           * @param p3 The third vertex.
           * @param material The triangle's material ID.
         **/
-        Triangle(Vector p1, Vector p2, Vector p3, std::string material);
+        Triangle(Vector p1, Vector p2, Vector p3, uint32_t material);
 
         /** @brief Returns the triangle's (minimum) bounding box.
         **/
@@ -180,7 +179,7 @@ void BuildBVH(std::vector<Triangle*>& list, uint32_t leafSize,
 
 /* This will create a triangle from three distinct vertices, and produce some *
  * precomputed values for use in other rendering subsystems.                  */
-Triangle::Triangle(Vector p1, Vector p2, Vector p3, std::string material)
+Triangle::Triangle(Vector p1, Vector p2, Vector p3, uint32_t material)
 : p1(p1), p2(p2), p3(p3)
 {
     /* Compute triangle edges... */
@@ -189,6 +188,10 @@ Triangle::Triangle(Vector p1, Vector p2, Vector p3, std::string material)
 
     /* Compute unsigned normal from the edges. */
     this->n = normalize(cross(this->x, this->y));
+
+	/* Compute the triangle's TBN matrix. */
+	this->t = normalize(this->x);
+	this->b = normalize(cross(this->t, this->n));
 
 	/* Compute the triangle's bounding box. */
     Vector lo = Vector(std::min(p1.x, std::min(p2.x, p3.x)),
@@ -202,7 +205,7 @@ Triangle::Triangle(Vector p1, Vector p2, Vector p3, std::string material)
     /* Compute the triangle's centroid. */
     this->centroid = (p1 + p2 + p3) / 3.0f;
 
-	this->rawMaterial = material;
+	this->material = material;
 }
 
 /* This will format the triangle for export to the OpenCL device, with enough *
@@ -214,44 +217,12 @@ void Triangle::CL(cl_triangle *out)
     p1.CL(&out->p);
     x.CL(&out->x);
     y.CL(&out->y);
+	t.CL(&out->t);
+	b.CL(&out->b);
     n.CL(&out->n);
 }
 
 /******************************************************************************/
-
-/* These are scene entity types, which indicate the nature of the next object in the scene file. */
-enum EntityType { COLORSYSTEM = 0, CAMERA = 1, DISTRIBUTION = 2, MATERIAL = 3, LIGHT = 4, PRIMITIVE = 5 };
-
-/* This is an entity header. */
-#pragma pack(1)
-struct EntityHeader
-{
-    /* The entity type. */
-    EntityType type;
-    /* The subtype. */
-    uint32_t subtype;
-};
-
-/* Utility function to read a scene file entity header from a file. */
-bool ReadHeader(std::fstream& file, EntityHeader* header)
-{
-    file.read((char*)header, sizeof(EntityHeader));
-    return (!file.eof());
-}
-
-/* This is a triangle compatible with my older raytracer (Lambda) to
- * quickly load geometry from existing scene files. */
-struct LambdaTriangle
-{
-	int32_t material, light;
-	float p1[3], p2[3], p3[3];
-};
-
-struct cl_info
-{
-	cl_uint triangleCount;
-	cl_uint nodeCount;
-};
 
 struct __attribute__ ((packed)) cl_node
 {
@@ -281,7 +252,7 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
     leafSize = node.child("general").attribute("leaf").as_int();
 
     std::vector<Triangle*> triangleList;
-    std::set<std::string> materialList;
+	this->count = 0;
 
     for (pugi::xml_node tri : node.child("data").children("triangle"))
     {
@@ -289,19 +260,9 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
         Vector p2 = parseVector(tri.child("p2"));
         Vector p3 = parseVector(tri.child("p3"));
 
-        std::string material = tri.attribute("ID").value();
+        uint32_t material = tri.attribute("ID").as_uint();
         triangleList.push_back(new Triangle(p1, p2, p3, material));
-        materialList.insert(material);
         ++count;
-    }
-
-	/* MatID / MatIndex conversion. */
-    for (size_t t = 0; t < count; ++t)
-    {
-        size_t index;
-        std::string m = triangleList[t]->rawMaterial;
-        index = std::distance(materialList.begin(), materialList.find(m));
-        triangleList[t]->material = index;
     }
 
     cl_int error;
@@ -359,24 +320,13 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
     for (size_t t = 0; t < count; ++t) delete triangleList[t];
 	delete [] raw;
 
-    fprintf(stderr, "Uploading geometry information.\n");
-
-	cl_info geometryInfo;
-	geometryInfo.triangleCount = count;
-	geometryInfo.nodeCount = nodeCount;
-
-	info = cl::Buffer(params.context,
-						     	 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-								 sizeof(cl_info), &geometryInfo, &error);
-	Error::Check(Error::Memory, error);
-
     fprintf(stderr, "Initialization complete.\n\n");
     stream.close();
 }
 
 Geometry::~Geometry()
 {
-	//for (size_t t = 0; t < list.size(); ++t) delete list[t];
+	// nothing here
 }
 
 void Geometry::Bind(cl_uint* index)
@@ -386,9 +336,6 @@ void Geometry::Bind(cl_uint* index)
     (*index)++;
     fprintf(stderr, "Binding <nodes@Geometry> to index %u.\n", *index);
 	Error::Check(Error::Bind, params.kernel.setArg(*index, this->nodes));
-    (*index)++;
-    fprintf(stderr, "Binding <info@Geometry> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg(*index, this->info));
     (*index)++;
 }
 

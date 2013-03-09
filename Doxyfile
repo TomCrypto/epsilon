@@ -713,7 +713,8 @@ FILE_PATTERNS          = *.c \
                          *.f \
                          *.for \
                          *.vhd \
-                         *.vhdl
+                         *.vhdl \
+                         *.cl
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
 # should be searched for input files as well. Possible values are YES and NO. 
@@ -727,11 +728,12 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is 
 # run.
 
-EXCLUDE                = ./pb/ \
-                         ./scenes/ \
+EXCLUDE                = ./scenes/ \
                          ./include/misc/pugixml.hpp \
                          ./include/misc/pugiconfig.hpp \
-                         ./src/misc/pugixml.cpp
+                         ./src/misc/pugixml.cpp \
+                         ./src/ \
+                         ./cl/old/
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or 
 # directories that are symbolic links (a Unix file system feature) are excluded 

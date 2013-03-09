@@ -1,1 +1,0 @@
-/* BVH intersection code. */

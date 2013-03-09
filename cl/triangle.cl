@@ -1,20 +1,41 @@
-/* Helper methods for ray/triangle intersection. */
+#pragma once
 
 #include <util.cl>
 
-/* This triangle record is used solely for rendering. BVH construction is done
- * host-side and requires some more information, such as the triangle centroid
- * and bounding volume, however those variables are not required here. */
+/** @file triangle.cl
+  * @brief Kernel triangle implementation.
+**/
+
+/** @struct Triangle
+  * @brief Kernel triangle representation.
+**/
 typedef struct Triangle
 {
-    //float3 p1, p2, n; /* Two vertices of the triangle and its face normal. */
-    //float3 ln, rn, fn; /* Left, right and far edge normals. */
-	//int material; // TEMPORARY
-    float3 p1, e1, e2, n;
-    int mat;
+    /** An arbitrary vertex of the triangle. **/
+    float3 p1;
+    /** First edge of the triangle. **/
+    float3 e1;
+    /** Second edge of the triangle. **/
+    float3 e2;
+    /** Triangle's tangent vector. **/
+    float3 t;
+    /** Triangle's bitangent vector. **/
+    float3 b;
+    /** Triangle's normal vector. **/
+    float3 n;
+    /** The triangle's material ID. **/
+    uint mat;
 } Triangle;
 
-/* Intersects a ray with a triangle. */
+/** Performs an intersection test between a ray and a triangle.
+  * @param o The ray's origin.
+  * @param d The ray's direction, as a unit vector.
+  * @param triangle The triangle to test intersection against.
+  * @param distance A pointer to the intersection distance.
+  * @returns Returns \c true if an intersection exists, \c false otherwise.
+  *          If this function returns \c false, then \c *distance is
+  *          indeterminate and must not be used.
+**/
 bool RayTriangle(float3 o, float3 d, Triangle triangle, float *distance)
 {
     o -= triangle.p1.xyz;
@@ -32,20 +53,4 @@ bool RayTriangle(float3 o, float3 d, Triangle triangle, float *distance)
 
     *distance = dot(triangle.e2.xyz, s) * de;
     return (*distance > EPSILON);
-
-    # if 0
-    /* Compute intersection with the plane in which the triangle lies. */
-    *distance = dot(triangle.p1 - o, triangle.n) / dot(d, triangle.n);
-    if (*distance < EPSILON) return false;
-
-    /* Get the intersection point. */
-    float3 p = o + *distance * d;
-    float3 l1 = p - triangle.p1;
-    float3 l2 = p - triangle.p2;
-
-    /* Check if there exists an  intersection. */
-    return ((dot(l1, triangle.ln) > -EPSILON)
-         && (dot(l1, triangle.rn) > -EPSILON)
-         && (dot(l2, triangle.fn) > -EPSILON));
-    #endif
 }

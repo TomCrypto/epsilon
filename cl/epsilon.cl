@@ -1,6 +1,24 @@
-#include <camera.cl>
+#pragma once
+
+#include <material.cl>
 #include <triangle.cl>
+#include <camera.cl>
 #include <prng.cl>
+#include <util.cl>
+
+/** @file epsilon.cl
+  * @brief Rendering kernel.
+**/
+
+/** This is a vector delta used for reliably computing the phase basis for
+  * scattering, any nonzero vector will do since scattering is isotropic.
+**/
+#define VDELTA (float3)(1, 1, 1)
+
+/** Maximum number of nested materials, setting this value too high will cause 
+  * register pressure and will slow down the rendering.
+**/
+#define MT 10
 
 typedef struct __attribute__ ((packed)) Node
 {
@@ -8,10 +26,24 @@ typedef struct __attribute__ ((packed)) Node
 	uint4 data;
 } Node;
 
-bool RayBBox(float3 origin, float3 direction, float3 min, float3 max, float* near, float* far)
+/** Computes the intersection between a ray and a bounding box.
+  * @param origin The ray's origin.
+  * @param direction The ray's direction, as a unit vector.
+  * @param bmin The bounding box's minimum coordinate.
+  * @param bmax The bounding box's maximum coordinate.
+  * @param near A pointer to the near intersection distance.
+  * @param far A pointer to the far intersection distance.
+  * @returns Whether an intersection occurs between the ray and the bounding
+  *          box. If this is \c true, the values of \c *near and \c *far 
+  *          indicate the distance to intersection. If this is \c false,
+  *          the values of \c *near and \c *far are indeterminate.
+**/
+bool RayBBox(float3 origin, float3 direction,
+             float3 bmin, float3 bmax,
+             float* near, float* far)
 {
-	float3 bot = (min - origin) / direction;
-	float3 top = (max - origin) / direction;
+	float3 bot = (bmin - origin) / direction;
+	float3 top = (bmax - origin) / direction;
 
 	float3 tmin = fmin(top, bot);
 	float3 tmax = fmax(top, bot);
@@ -36,7 +68,7 @@ BVHTraversal MakeTraversal(int i, float mint)
 	return ret;
 }
 
-bool Intersect(float3 origin, float3 direction, float* distance, int* hit,
+bool Intersect(float3 origin, float3 direction, float* distance, uint *hit,
 			   global Triangle* triangles, global Node* nodes)
 {
 	*distance = INFINITY;
@@ -45,7 +77,7 @@ bool Intersect(float3 origin, float3 direction, float* distance, int* hit,
 	float bbhits[4];
 	int closer, other;
 
-	BVHTraversal todo[64];
+	BVHTraversal todo[16];
 	int stackptr = 0;
 
 	todo[stackptr].i = 0;
@@ -122,150 +154,189 @@ typedef struct __attribute__ ((packed)) Params
 	uint width, height, pass;
 } Params;
 
-typedef struct __attribute__ ((packed)) SceneInfo
-{
-	uint triangleCount;
-} SceneInfo;
-
+/* Image sampler, using texel linear interpolation. */
 const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
 						  CLK_ADDRESS_CLAMP_TO_EDGE  |
                           CLK_FILTER_LINEAR;
 
-#if 0
-
-float Intersect(global Triangle *geometry, float3 origin, float3 direction,
-                int *hit, uint count)
+/** This is the main kernel, which performs the entire ray tracing step.
+  * @param buffer The pixel buffer, as a flat 2D array.
+  * @param params The render parameters (render width, height, pass count).
+  * @param spectrum The tristimulus curve, to map wavelengths to colors.
+  * @param triangles The list of triangles in the scene.
+  * @param nodes The tree datastructure, as a list of nodes.
+  * @param camera The virtual camera parameters.
+  * @param seed The PRNG's seed.
+**/
+void kernel clmain(   global   float4        *buffer, 
+				    constant   Params        *params,
+				   read_only   image1d_t    spectrum, 
+	     		      global   Triangle   *triangles, 
+	     		      global   Node           *nodes,
+				    constant   Camera        *camera,
+				    constant   ulong4          *seed)
 {
-    float min_t = INFINITY;
-    int closest = -1;
-
-    for (uint i = 0; i < count; ++i)
-    {
-        float dist;
-        if (RayTriangle(origin, direction, geometry[i], &dist))
-        {
-            if (dist < min_t)
-            {
-                min_t = dist;
-                closest = i;
-            }
-        }
-    }
-
-    if (closest != -1) *hit = closest;
-    return min_t;
-};
-
-#endif
-
-void kernel clmain(global float4 *render, /* Render buffer in XYZn format. */
-				   constant Params *params, /* Scene information. */
-				   read_only image1d_t spectrum, /* Color-matching function. */
-	     		   global Triangle *triangles, /* List of triangles in scene. */
-	     		   global Node *nodes, /* List of BVH nodes in scene. */
-				   constant SceneInfo *sceneInfo, /* Scene information. */
-				   constant Camera *camera, /* Camera information. */
-				   constant ulong4 *seed /* Seed for the PRNG. */
-                   )
-{
-	/* TEMPORARY | matID -> wavelength peak colors. negative -> light. */
-	float matID[6] = {0, 0, 525, 480, -1, 640};
-
+	/* Init PRNG for this worker. */
 	size_t index = get_global_id(0);
-
-	/* Get a PRNG instance for this worker. */
     PRNG prng = init(index, seed);
 
-    /* Get pixel coordinates in normalized coordinates [0..1). */
+    /* Jitter for antialiasing. */
     float a1 = rand(&prng) - 0.5f;
     float a2 = rand(&prng) - 0.5f;
-
-	float ratio = (float)params->width / params->height;
-	float x = (float)(a1 + index % params->width) / params->width;
+	
+	/* Obtain normalized pixel coordinates between 0 and 1 excl. */
+	float x = (float)(a1 + index % params->width) /  params->width;
 	float y = (float)(a2 + index / params->width) / params->height;
+
+	/* Aspect ratio correction, prefers widescreen... */
+	float ratio = (float)params->width / params->height;
 	x = 0.5f * (1 + ratio) - x * ratio;
 
-    /* Compute the standard camera ray. */
-    float3 origin, direction;
-    Trace(x, y, &origin, &direction, camera, rand(&prng), rand(&prng));
+	/* The ray as vectors. */
+	float3 origin, direction;
+
+	/* Compute the camera ray from the normalized pixel coordinates. */
+    Trace(x, y, &origin, &direction, rand(&prng), rand(&prng), camera);
+
+	/* Media stack. */
+	uint matStack[MT];
+	matStack[0] = 0;
+	uint matPos = 0;
 
     /* Select random wavelength. */
     float wavelength = rand(&prng);
-	//float wavelength = (params->pass % 81) / 80.0f;
 
-    /* Repeat until we die. */
-    float radiance = 0.0f;
-    while (true)
+	/* Convert this to a nanometer wavelength. */
+	float w_nm = (wavelength * 400 + 380) * 1e-9;
+
+	/* Find light path. */
+	float radiance = 0.0f;
+	while (true)
     {
-		int hit = -1;
-        Triangle tri;
+        /* Triangle/far point. */
+		uint hit = -1; float t_d;
 
-		float t;
-		bool X = Intersect(origin, direction, &t, &hit, triangles, nodes);
-
-        if (!X)
+        /* Intersect the ray against the entire scene using the tree. */
+        if (!Intersect(origin, direction, &t_d, &hit, triangles, nodes))
         {
-			radiance = 10;
-            break;
+            /* Escaped ray - implement sky system here later. */
+			radiance = 0.0f;
+			break;
         }
 
-		tri = triangles[hit];
-		float material = matID[tri.mat];
+        /* Get the intersected triangle. */
+		Triangle triangle = triangles[hit];
 
-        float3 point = origin + t * direction;
+		/* Obtain the medium absorption coefficient. */
+		float k_a = absorption(matStack[matPos], w_nm);
 
-        /* Check material for light! */
-        if (material < 0)
-        {
-            /* This is a light. */
-			float w = (380 + 400 * wavelength) * 1e-9;
-			float powerTerm  = 3.74183e-16f * pow(w, -5.0f);
-    		radiance = powerTerm / (exp(1.4388e-2f / (w * 4150)) - 1.0f);
-            break;
-        }
+		/* Find expected scattering distance. */
+		float s_d = -log(1 - rand(&prng)) / k_a;
 
-        /* Get normal. */
-        float3 normal = tri.n;
-        normal = normal * sign(-dot(normal, direction));
+		/* Scatter? */
+		if (s_d < t_d)
+		{
+			/* Advance to scatter location. */
+			origin = origin + s_d * direction;
 
-		/* Get real wavelength (380nm to 680nm) */
-		float w = 380 + 400 * wavelength;
+			/* Build the phase basis (scattering is always isotropic). */
+			float3 v_t = normalize(cross(direction, direction + VDELTA));
+			float3 v_b = normalize(cross(direction, v_t));
+			float3 v_n = direction;
 
-		/* Otherwise, apply response curve. */
-		float response = (material == 0) ? 1.0 : 0.45 + exp(-pow(w - material, 2.0f) * 0.001f) * 0.55;
-		response *= 0.8;
+			/* Rotate ray, to unit space. */
+			direction = direction.x * (-v_b)
+                      + direction.y * (-v_n)
+                      + direction.z * (-v_t);
 
-		/* Get a random diffuse sample. */
-		float u1 = rand(&prng);
-		float u2 = rand(&prng);
-		float theta = 2.0f * 3.149159265 * u2;
-		float r = sqrt(u1);
+			/* Construct an inverse TBN matrix here. */
+			float3 w_b = (float3)(v_b.x, v_n.x, v_t.x);
+			float3 w_n = (float3)(v_b.y, v_n.y, v_t.y);
+			float3 w_t = (float3)(v_b.z, v_n.z, v_t.z);
 
-		float3 newdir = (float3)(r * cos(theta), sqrt(1.0f - u1), r * sin(theta));
+			/* Scatter ray using the current material's properties. */
+			float4 scattered = scatter(matStack[matPos], w_nm, &prng);
+			direction = scattered.xyz;
+			radiance = scattered.w;
 
-		/* Rotate according to basis. */
-		float3 basisY = normal;
-		float3 UP = normalize((float3)(0.01, 0.99, 0.01));
-		float3 basisX = normalize(cross(basisY, UP));
-    	float3 basisZ = normalize(cross(basisX, basisY));
-	    newdir = newdir.x * basisX
-               + newdir.y * basisY
-		       + newdir.z * basisZ;
+			/* Go back to world space. */
+			direction = direction.x * v_b
+                      + direction.y * v_n
+                      + direction.z * v_t;
+		}
+		else
+		{
+			/* Move ray to intersection pt. */
+			origin = origin + t_d * direction;
 
-        radiance = response;
-		direction = newdir;            
-        
-        if (rand(&prng) > radiance)
-        {
-            radiance = 0.0f;
-            break;
-        }
+			/* Obtain TBN matrix. */
+			float3 v_t = triangle.t;
+			float3 v_b = triangle.b;
+			float3 v_n = triangle.n;
 
-        /* Else continue. */
-        origin = point + normal * 0.01f;
+			/* Flip the normal, with the bitangent, if necessary. */
+			if (dot(v_n, direction) > 0) { v_n = -v_n; v_b = -v_b; }
+
+			/* Construct an inverse TBN matrix here. */
+			float3 w_b = (float3)(v_b.x, v_n.x, v_t.x);
+			float3 w_n = (float3)(v_b.y, v_n.y, v_t.y);
+			float3 w_t = (float3)(v_b.z, v_n.z, v_t.z);
+
+			/* Transform to TBN space. */
+			direction = direction.x * w_b
+                      + direction.y * w_n
+                      + direction.z * w_t;
+
+			/* Check if this triangle, is actually a light source. */
+			radiance = exitant(triangle.mat, w_nm, direction, &prng);
+			if (radiance > 0) break; /* This was a light source... */
+
+			/* Select the right media at the interface. */
+			uint in = matStack[matPos], to = triangle.mat;
+			if (triangle.mat == matStack[matPos])
+			{
+				/* Leaving this medium. */
+				to = matStack[matPos - 1];
+			}
+
+			/* Reflect this ray, by using the reflectance function.. */
+			float4 reflected = reflect(in, to, w_nm, direction, &prng);
+			direction = reflected.xyz;
+			radiance = reflected.w;
+
+			/* Go back to world space. */
+			direction = direction.x * v_b
+                      + direction.y * v_n
+                      + direction.z * v_t;
+
+			/* Did this ray get transmitted, reflected? */
+			if (dot(reflected.xyz, (float3)(0, 1, 0)) < 0)
+			{
+				/* Ray is transmitted. */
+				origin += (-v_n) * PSHBK;
+
+				/* Has this light ray left current material? */
+				if (triangle.mat == matStack[matPos]) matPos--;
+				else
+				{
+					/* Else, add material to stack. */
+					matStack[++matPos] = triangle.mat;
+				}
+			}
+			else
+			{
+				/* Push this ray back. */
+				origin += (+v_n) * PSHBK;
+			}
+		}
+
+		/* Russian Roulette, probabilistically discard rays. */
+        if (rand(&prng) > radiance) { radiance = 0.0f; break; }
     }
 
+	/* Convert this spectral sample to a color using the spectral curve. */
     float3 xyz = radiance * read_imagef(spectrum, sampler, wavelength).xyz;
 
-    render[get_global_id(0)] += (float4)(xyz, radiance);
+	/* Finally - add this sample to the pixel buffer. */
+    buffer[get_global_id(0)] += (float4)(xyz, radiance);
 }

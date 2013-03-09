@@ -13,11 +13,11 @@
   *
   * This file contains the renderer.
   *
-  * \todo Clean up geometry (BVH building, specifically).
   * \todo Clean up pixel buffer code (Pixel object, combine PixelBuffer &
   *       DeviceParams, etc..)
   * \todo When all of the above works perfectly, implement material system &
   *       optimize/document the kernel code.
+  * \todo Clean up kernel code.
   *
   * \todo [Minor annoyance] Find a portable way to print size_t's.
   * \todo [Low priority] Comment the source files.

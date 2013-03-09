@@ -23,9 +23,6 @@ class Geometry : public KernelObject
         /** @brief Contains the number of triangles in the scene. **/
         uint32_t count;
 
-        /** @brief Contains the geometry information (e.g. triangle count). **/
-		cl::Buffer info;
-
         /** @brief Describes the BVH leaf size (performance parameter). **/
 		uint32_t leafSize;
 
