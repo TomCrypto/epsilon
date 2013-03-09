@@ -38,3 +38,4 @@ excluded/
 
 # Python tools
 *.py
+*.py~
