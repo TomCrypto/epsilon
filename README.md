@@ -78,6 +78,14 @@ making any necessary tweaks to the scene as you see more and more detail. After
 you are satisfied with the result, set a high resolution, and number of passes,
 and let it run.
 
+This is what the renderer should look like while working:
+
+<p align="center">
+<img
+src="https://raw.github.com/TomCrypto/epsilon/master/extra/working.png"
+alt="Renderer interface"/>
+</p>
+
 Supported Platforms
 -------------------
 
