@@ -35,7 +35,7 @@ int main(/* int argc, char* argv[] */)
     #error Unrecognized OS. Override at your own risk.
     #endif
 
-    #ifdef LOW_RES_TIME
+    #ifdef LOW_RES_TIMER
     fprintf(stderr, "[+] Using low-resolution timer.\n");
     #else
     fprintf(stderr, "[+] Using high-resolution timer.\n");
