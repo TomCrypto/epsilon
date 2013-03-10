@@ -28,6 +28,7 @@ doc/
 *.swo
 *.swn
 *.swm
+*~
 
 # Renders and binary data
 excluded/
@@ -37,5 +38,6 @@ excluded/
 *.log
 
 # Python tools
+tools/
 *.py
 *.py~

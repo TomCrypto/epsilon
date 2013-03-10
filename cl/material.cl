@@ -69,7 +69,7 @@ float absorption(uint matID, float wavelength)
     {
         float w = wavelength * 1e9;
 
-        return 1e-5 + 5.2 * (1 - exp(-pow(w - 660, 2) * 0.001f));
+        return 1e-5 + 0.7 * (1 - exp(-pow(w - 650, 2) * 0.001f));
     }
 
     return 1e-5; /* No absorption for now. */

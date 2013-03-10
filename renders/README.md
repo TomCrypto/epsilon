@@ -31,7 +31,7 @@ Sorry for abusing the staircase model, but it is a rather good test scene.
 <p align="center">
 <img src="https://raw.github.com/TomCrypto/epsilon/master/renders/Absorption.png" alt="Spectral Absorption"/>
 </p>
-This was the first high resolution render obtained after I implemented the very
-first iteration of the material system. It features - of course - the staircase
-model, using a completely transparent glass-like material. The new feature here
-is spectral absorption.
+This is a new model (380k triangles), which I used to demonstrate the brand new
+material system, and in particular spectral absorption. The glass interface has
+no influence on the Buddha's red color, which is entirely due to the absorption
+of non-red wavelengths by the medium inside the statue.
