@@ -76,9 +76,7 @@ Of course, the ideal number of passes highly depends on the scene, and notably,
 the lighting conditions. Usually, it is best to start low, and increment slowly
 making any necessary tweaks to the scene as you see more and more detail. After
 you are satisfied with the result, set a high resolution, and number of passes,
-and let it run.
-
-This is what the renderer should look like while working:
+and let it run. This is what the renderer should look like while working:
 
 <p align="center">
 <img
