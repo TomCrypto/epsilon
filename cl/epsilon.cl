@@ -77,7 +77,7 @@ bool Intersect(float3 origin, float3 direction, float* distance, uint *hit,
     float bbhits[4];
     int closer, other;
 
-    BVHTraversal todo[16];
+    BVHTraversal todo[24];
     int stackptr = 0;
 
     todo[stackptr].i = 0;

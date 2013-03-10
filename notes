@@ -7,3 +7,13 @@ Some notes to myself.
 
 - materials are hardcoded, need an extra indirection layer to decouple geometry
   from materials. Or one could load materials and geometry together.. not good.
+
+Todo:
+
+X fix the interface scrolling through platforms/devices, which *still* doesn't
+  work for some reason.
+
+- PDCurses seems to have issues with getstr(), and tends to overwrite borders.
+  Fix this by redrawing the border after each field input under Windows.
+
+- Damn macros under Windows/MinGW, need to fix that.

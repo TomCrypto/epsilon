@@ -23,6 +23,7 @@
 Interface::Interface()
 {
     window = initscr();
+    keypad(window, 1);
 
     if (has_colors())
     {
@@ -187,8 +188,8 @@ bool Interface::GetInput()
         key = getch();
 
         /* Left key = previous platform, right key = next platform. */
-        if ((key == KEY_LEFT) || (platformIndex > 0)) platformIndex--;
-        if ((key == KEY_RIGHT) || (platformIndex < count - 1)) platformIndex++;
+        if ((key == KEY_LEFT) && (platformIndex > 0)) platformIndex--;
+        if ((key == KEY_RIGHT) && (platformIndex < count - 1)) platformIndex++;
     }
 
     deviceIndex = 0;
@@ -216,8 +217,8 @@ bool Interface::GetInput()
         Redraw();
         key = getch();
 
-        if ((key == KEY_LEFT) || (deviceIndex > 0)) deviceIndex--;
-        if ((key == KEY_RIGHT) || (deviceIndex < count - 1)) deviceIndex++;
+        if ((key == KEY_LEFT) && (deviceIndex > 0)) deviceIndex--;
+        if ((key == KEY_RIGHT) && (deviceIndex < count - 1)) deviceIndex++;
     }
 
     SetInput(true);
