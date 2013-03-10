@@ -118,7 +118,7 @@ void Interface::DrawFrame()
 
     /* Write the title at the top of the terminal. */
     attron(COLOR_PAIR(COLOR_TITLE2)); attron(A_BOLD);
-    mvprintw(1, 2, "   epsilon"); mvprintw(1, 65, "    v0.12");
+    mvprintw(1, 2, "   epsilon"); mvprintw(1, 65, "    v0.13");
     attron(COLOR_PAIR(COLOR_TITLE1)); attron(A_BOLD);
     mvprintw(1, 23, "Physically Based Spectral Renderer");
 
