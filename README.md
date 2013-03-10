@@ -138,7 +138,7 @@ Troubleshooting
          under the name `PDCurses`. You should be able to find it online - note
          I did not find a prebuilt 64-bit version of this library, so you might
          have to build it yourself if you want 64-bit support.
-         Now you have the library installed in your favorite compiler, you just
+         When you have the library installed in your favorite compiler you just
          need to replace `ncurses.h` by `curses.h`, and link to `PDCurses`, not
          `ncurses`, and everthing should now work.
 
