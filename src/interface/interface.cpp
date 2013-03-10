@@ -307,6 +307,20 @@ void Interface::DisplayTime(double remains, double elapsed)
     }
 }
 
+/* Formats triangle count with suffixes. */
+std::string FormatTriangles(uint32_t triangles)
+{
+    std::stringstream stream;
+    stream << std::fixed;
+    stream.precision(1);
+    
+    if      (triangles >= 1e6) stream << triangles / 1.0e6 << "M";
+    else if (triangles >= 1e3) stream << triangles / 1.0e3 << "K";
+    else stream << triangles;
+
+    return stream.str();
+}
+
 void Interface::GiveStatistics(Statistics statistics)
 {
     DisplayProgress(statistics.progress);
@@ -315,7 +329,7 @@ void Interface::GiveStatistics(Statistics statistics)
     if (statistics.progress == 1.0) statistics.remains = 0.0;
 
     std::stringstream ss;
-    ss << "Triangles: " << statistics.tris << ", ";
+    ss << FormatTriangles(statistics.tris) << " triangles, ";
 
     /* Is there enough data? */
     if (statistics.elapsed < 1)
