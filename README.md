@@ -114,7 +114,7 @@ Build Options
 The following special build flags can be passed to alter some sections of code,
 either for testing or compatibility - simply override the makefile, as follows:
 
-    $(CXXFLAGS) = [previous flags] -Dflag # where flag is the build flag
+    CXXFLAGS = [previous flags] -Dflag # where flag is the build flag
 
 And then rebuild all. The currently available build flags are listed below:
 
