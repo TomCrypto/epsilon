@@ -1,5 +1,9 @@
 Some notes to myself.
 
+- Doxygen seems to want to merge the OpenCL structs with the C++ classes of the
+  same name. I guess this is fitting somehow, so I'll consider it a feature and
+  not a bug. Until a future revision breaks it, anyway.
+
 - need a better system to load geometry - XML just isn't going to cut it in the
   long run once bigger scenes are available. Thinking about a system where each
   model is stored in a single .obj file, and the geometry.xml file simply lists
