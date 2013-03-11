@@ -4,6 +4,8 @@
 
 /** @file geometry.hpp
   * @brief Geometry handling.
+  *
+  * \todo Implement model rotation (it is parsed but does nothing for now).
 **/
 
 /** @class Geometry

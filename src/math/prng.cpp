@@ -14,14 +14,13 @@ PRNG::PRNG(EngineParams& params) : KernelObject(params)
 
     this->seed = 0;
 
-    fprintf(stderr, " complete!\n\n");
+    fprintf(stderr, " complete.\n\n");
 }
 
 void PRNG::Bind(cl_uint* index)
 {
-    fprintf(stderr, "Binding <buffer@PRNG> to slot %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
-    (*index)++;
+    fprintf(stderr, "Binding <buffer@PRNG> to index %u.\n", *index);
+    Error::Check(Error::Bind, params.kernel.setArg((*index)++, buffer));
 }
 
 void PRNG::Update(size_t /* index */)

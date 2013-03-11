@@ -60,6 +60,7 @@ Renderer::Renderer(size_t width, size_t height, size_t passes,
     objects.push_back(new DeviceParams(params));
     objects.push_back(new Tristimulus (params));
     objects.push_back(new Geometry    (params));
+    objects.push_back(new Materials   (params));
     objects.push_back(new Camera      (params));
     objects.push_back(new PRNG        (params));
     objects.push_back(new Progress    (params));

@@ -20,9 +20,8 @@ DeviceParams::DeviceParams(EngineParams& params) : KernelObject(params)
 
 void DeviceParams::Bind(cl_uint* index)
 {
-    fprintf(stderr, "Binding <buffer@DeviceParams> to slot %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
-    (*index)++;
+    fprintf(stderr, "Binding <buffer@DeviceParams> to index %u.\n", *index);
+    Error::Check(Error::Bind, params.kernel.setArg((*index)++, buffer));
 }
 
 void DeviceParams::Update(size_t index)
@@ -84,9 +83,8 @@ void* PixelBuffer::Query(size_t /* query */)
 
 void PixelBuffer::Bind(cl_uint* index)
 {
-    fprintf(stderr, "Binding <buffer@PixelBuffer> to slot %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
-    (*index)++;
+    fprintf(stderr, "Binding <buffer@PixelBuffer> to index %u.\n", *index);
+    Error::Check(Error::Bind, params.kernel.setArg((*index)++, buffer));
 }
 
 void PixelBuffer::Acquire(const EngineParams& params)
@@ -200,9 +198,8 @@ Tristimulus::Tristimulus(EngineParams& params) : KernelObject(params)
 
 void Tristimulus::Bind(cl_uint* index)
 {
-    fprintf(stderr, "Binding <buffer@Tristimulus> to slot %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
-    (*index)++;
+    fprintf(stderr, "Binding <buffer@Tristimulus> to index %u.\n", *index);
+    Error::Check(Error::Bind, params.kernel.setArg((*index)++, buffer));
 }
 
 void Tristimulus::Update(size_t /* index */)

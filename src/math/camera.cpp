@@ -88,9 +88,8 @@ Camera::Camera(EngineParams& params) : KernelObject(params)
 
 void Camera::Bind(cl_uint* index)
 {
-    fprintf(stderr, "Binding <buffer@Camera> to slot %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg(*index, this->buffer));
-    (*index)++;
+    fprintf(stderr, "Binding <buffer@Camera> to index %u.\n", *index);
+    Error::Check(Error::Bind, params.kernel.setArg((*index)++, buffer));
 }
 
 void Camera::Update(size_t /* index */) { return; }

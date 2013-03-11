@@ -7,6 +7,7 @@
 #include <misc/misc.hpp>
 #include <math/camera.hpp>
 #include <geometry/geometry.hpp>
+#include <material/material.hpp>
 
 /** @file renderer.hpp
   * @brief ɛpsilon rendering engine.

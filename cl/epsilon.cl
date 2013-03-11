@@ -165,14 +165,16 @@ const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
   * @param spectrum The tristimulus curve, to map wavelengths to colors.
   * @param triangles The list of triangles in the scene.
   * @param nodes The tree datastructure, as a list of nodes.
+  * @param mapping The model to material mapping.
   * @param camera The virtual camera parameters.
   * @param seed The PRNG's seed.
 **/
 void kernel clmain(   global   float4        *buffer, 
                     constant   Params        *params,
                    read_only   image1d_t    spectrum, 
-                       global   Triangle   *triangles, 
-                       global   Node           *nodes,
+                       global  Triangle   *triangles, 
+                       global  Node           *nodes,
+                    constant   uint         *mapping,
                     constant   Camera        *camera,
                     constant   ulong4          *seed)
 {
@@ -226,6 +228,9 @@ void kernel clmain(   global   float4        *buffer,
 
         /* Get the intersected triangle. */
         Triangle triangle = triangles[hit];
+
+        /* Obtain the triangle's correct matID. */
+        uint mappingMatID = mapping[triangle.mat];
 
         /* Obtain the medium absorption coefficient. */
         float k_a = absorption(matStack[matPos], w_nm);
@@ -288,12 +293,12 @@ void kernel clmain(   global   float4        *buffer,
                       + direction.z * w_t;
 
             /* Check if this triangle, is actually a light source. */
-            radiance = exitant(triangle.mat, w_nm, direction, &prng);
+            radiance = exitant(mappingMatID, w_nm, direction, &prng);
             if (radiance > 0) break; /* This was a light source... */
 
             /* Select the right media at the interface. */
-            uint in = matStack[matPos], to = triangle.mat;
-            if (triangle.mat == matStack[matPos])
+            uint in = matStack[matPos], to = mappingMatID;
+            if (mappingMatID == matStack[matPos])
             {
                 /* Leaving this medium. */
                 to = matStack[matPos - 1];
@@ -316,11 +321,11 @@ void kernel clmain(   global   float4        *buffer,
                 origin += (-v_n) * PSHBK;
 
                 /* Has this light ray left current material? */
-                if (triangle.mat == matStack[matPos]) matPos--;
+                if (mappingMatID == matStack[matPos]) matPos--;
                 else
                 {
                     /* Else, add material to stack. */
-                    matStack[++matPos] = triangle.mat;
+                    matStack[++matPos] = mappingMatID;
                 }
             }
             else

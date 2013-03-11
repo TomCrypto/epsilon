@@ -14,7 +14,7 @@ struct cl_triangle
     cl_float4 t; /* The triangle's tangent.   */
     cl_float4 b; /* The triangle's bitangent. */
     cl_float4 n; /* The triangle's normal.    */
-    cl_int mat;  /* The triangle's material.  */
+    cl_uint mat; /* The triangle's material.  */
 };
 
 
@@ -38,13 +38,16 @@ class Triangle
         /** @brief The triangle's material ID. **/
         uint32_t material;
 
+        /** @brief The triangle's model ID. **/
+        std::string model;
+
         /** @brief Creates the triangle from three points (vertices).
           * @param p1 The first vertex.
           * @param p2 The second vertex.
           * @param p3 The third vertex.
-          * @param material The triangle's material ID.
+          * @param modelID The triangle's model ID.
         **/
-        Triangle(Vector p1, Vector p2, Vector p3, uint32_t material);
+        Triangle(Vector p1, Vector p2, Vector p3, std::string modelID);
 
         /** @brief Returns the triangle's (minimum) bounding box.
         **/
@@ -179,7 +182,7 @@ void BuildBVH(std::vector<Triangle*>& list, uint32_t leafSize,
 
 /* This will create a triangle from three distinct vertices, and produce some *
  * precomputed values for use in other rendering subsystems.                  */
-Triangle::Triangle(Vector p1, Vector p2, Vector p3, uint32_t material)
+Triangle::Triangle(Vector p1, Vector p2, Vector p3, std::string modelID)
 : p1(p1), p2(p2), p3(p3)
 {
     /* Compute triangle edges... */
@@ -205,7 +208,7 @@ Triangle::Triangle(Vector p1, Vector p2, Vector p3, uint32_t material)
     /* Compute the triangle's centroid. */
     this->centroid = (p1 + p2 + p3) / 3.0f;
 
-    this->material = material;
+    this->model = modelID;
 }
 
 /* This will format the triangle for export to the OpenCL device, with enough *
@@ -231,9 +234,64 @@ struct __attribute__ ((packed)) cl_node
     cl_uint4 data; // start || nPrims || rightOffset
 };
 
-#include <sstream>
+/* Contains model information. */
+struct ModelInfo
+{
+    std::string modelID;
+    Vector translation;
+    Vector rotation;
+    Vector scaling;
+};
 
-template <typename T> std::string tostr(const T& t) { std::ostringstream os; os<<t; return os.str(); }
+/* Parses an obj model and returns a list of triangles. */
+std::vector<Triangle*> ParseModel(std::fstream &obj, ModelInfo info)
+{
+    std::vector<Triangle*> triangles;
+    std::vector<Vector*> vertices;
+    std::string line;
+
+    while (std::getline(obj, line))
+    {
+        std::vector<std::string> tokens = split(line, ' ');
+        if ((tokens.size() > 0) && (tokens[0] != "#"))
+        {
+            if (tokens[0] == "v") /* Add a vertex to the vertex list. */
+            {
+                Vector* v = new Vector(atof(tokens[1].c_str()),
+                                       atof(tokens[2].c_str()),
+                                       atof(tokens[3].c_str()));
+
+                /* Apply rotation here. */
+                /* IMPLEMENT ROTATION. */
+
+                /* Scale the vector. */
+                (*v) *= info.scaling;
+
+                /* Translate it. */
+                (*v) += info.translation;
+
+                vertices.push_back(v);
+            }
+            else if (tokens[0] == "f") /* Parse this face (triangle). */
+            {
+                uint32_t v1 = atoi(tokens[1].c_str()) - 1;
+                uint32_t v2 = atoi(tokens[2].c_str()) - 1;
+                uint32_t v3 = atoi(tokens[3].c_str()) - 1;
+
+                Triangle* t = new Triangle(*vertices[v1],
+                                           *vertices[v2],
+                                           *vertices[v3],
+                                           info.modelID);
+
+                triangles.push_back(t);
+            }
+        }
+    }
+
+    for (size_t t = 0; t < vertices.size(); ++t) delete vertices[t];
+
+    return triangles;
+}
 
 Geometry::Geometry(EngineParams& params) : KernelObject(params)
 {
@@ -252,22 +310,53 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
     leafSize = node.child("general").attribute("leaf").as_int();
 
     std::vector<Triangle*> triangleList;
-    this->count = 0;
+    std::set<std::string> modelList;
 
-    for (pugi::xml_node tri : node.child("data").children("triangle"))
+    for (pugi::xml_node model : node.child("data").children("model"))
     {
-        Vector p1 = parseVector(tri.child("p1"));
-        Vector p2 = parseVector(tri.child("p2"));
-        Vector p3 = parseVector(tri.child("p3"));
+        std::string modelPath = model.attribute("path").value();
+        std::string modelID   = model.attribute("ID"  ).value();
 
-        uint32_t material = tri.attribute("ID").as_uint();
-        triangleList.push_back(new Triangle(p1, p2, p3, material));
-        ++count;
+        fprintf(stderr, "Parsing model '%s' [%s].\n", modelPath.c_str(),
+                                                      modelID.c_str());
+
+        std::fstream f;
+        GetData("models/" + modelPath + ".obj", f);
+
+        try
+        {
+            ModelInfo modelInfo;
+            modelInfo.modelID = modelID;
+            modelInfo.translation = parseVector(model.child("translation"));
+            modelInfo.rotation    = parseVector(model.child("rotation"   ));
+            modelInfo.scaling     = parseVector(model.child("scaling"    ));
+
+            std::vector<Triangle*> data = ParseModel(f, modelInfo);
+            triangleList.insert(triangleList.end(), data.begin(), data.end());
+
+            modelList.insert(modelID);
+        }
+        catch (std::exception &e)
+        {
+            Error::Check(Error::IO, 0, true);
+        }
+    }
+
+    count = triangleList.size();
+
+    fprintf(stderr, "\nResolving model ID's.\n");
+
+    /* Convert modelID to materialID. */
+    for (size_t t = 0; t < count; ++t)
+    {
+        std::string m = triangleList[t]->model;
+        triangleList[t]->material = std::distance(modelList.begin(),
+                                                  modelList.find(m));
     }
 
     cl_int error;
 
-    fprintf(stderr, "Total %u triangles.\n", count);
+    fprintf(stderr, "\nTotal %u triangles.\n", count);
     fprintf(stderr, "Now building BVH.\n");
 
     uint32_t leafCount = 0, nodeCount = 0;
@@ -276,7 +365,7 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
     BuildBVH(triangleList, leafSize, &leafCount, &nodeCount, &bvhTree);
     fprintf(stderr, "BVH successfully built, %u nodes.\n", nodeCount);
     fprintf(stderr, "Number of leaves: %u/%u.\n", leafCount, leafSize);
-    fprintf(stderr, "Now compacting BVH.\n");
+    fprintf(stderr, "\nNow compacting BVH.\n");
 
     {    
         const std::unique_ptr<cl_node[]> rawNodes(new cl_node[nodeCount]);
@@ -303,7 +392,7 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 
     delete[] bvhTree;
 
-    fprintf(stderr, "Compacting triangle list.\n");
+    fprintf(stderr, "\nCompacting triangle list.\n");
 
     cl_triangle* raw = new cl_triangle[count];
     for (size_t t = 0; t < count; ++t) triangleList[t]->CL(raw + t);
@@ -332,11 +421,9 @@ Geometry::~Geometry()
 void Geometry::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <triangles@Geometry> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg(*index, this->triangles));
-    (*index)++;
+    Error::Check(Error::Bind, params.kernel.setArg((*index)++, triangles));
     fprintf(stderr, "Binding <nodes@Geometry> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg(*index, this->nodes));
-    (*index)++;
+    Error::Check(Error::Bind, params.kernel.setArg((*index)++, nodes));
 }
 
 void Geometry::Update(size_t /* index */) { return; }
