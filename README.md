@@ -84,6 +84,17 @@ src="https://raw.github.com/TomCrypto/epsilon/master/extra/working.png"
 alt="Renderer interface"/>
 </p>
 
+And below is how it looks on Windows. Note 'Cayman' is my GPU's marketing name.
+Also notice the curious border glitch, which will be fixed soon. Performance is
+not great at the moment for large scenes however the tree traversal has not yet
+been looked over.
+
+<p align="center">
+<img
+src="https://raw.github.com/TomCrypto/epsilon/master/extra/working_win.png"
+alt="Renderer for Windows"/>
+</p>
+
 Supported Platforms
 -------------------
 

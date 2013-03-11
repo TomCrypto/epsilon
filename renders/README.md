@@ -29,10 +29,18 @@ This is an outdoor scene showing the depth-of-field effect even more clearly...
 Sorry for abusing the staircase model, but it is a rather good test scene.
 
 <p align="center">
-<img src="https://raw.github.com/TomCrypto/epsilon/master/renders/Absorption.png" alt="Spectral Absorption"/>
+<img src="https://raw.github.com/TomCrypto/epsilon/master/renders/absorption.png" alt="Spectral Absorption"/>
 </p>
 This is a new model (380k triangles), which I used to demonstrate the brand new
 material system, and in particular spectral absorption. The glass interface has
 no influence on the Buddha's red color, which is entirely due to the absorption
 of non-red wavelengths by the statue's medium. Strangely reminiscent of a gummy
 bear.
+
+<p align="center">
+<img src="https://raw.github.com/TomCrypto/epsilon/master/renders/buddha.png" alt="Light Buddha"/>
+</p>
+This is a curious render. Basically, it is the previous render's buddha statue,
+with more or less the same absorbing material, and inside it, the same model is
+duplicated with a slightly smaller scale, and as a light source instead. As you
+can see, the results are interesting. Note the caustic on the ceiling.
