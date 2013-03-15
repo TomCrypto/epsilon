@@ -43,37 +43,33 @@ void* DeviceParams::Query(size_t /* query */)
 
 PixelBuffer::PixelBuffer(EngineParams& params) : KernelObject(params)
 {
-    fprintf(stderr, "Initializing <PixelBuffer>...");
-    this->width = params.width;
-    this->height = params.height;
-    this->size = this->width * this->height * sizeof(Pixel);
+    fprintf(stderr, "Initializing <PixelBuffer>...\n");
 
-    this->pixels = new Pixel[this->width * this->height];
+    size_t floatCount = params.width * params.height * 4;
+
+    pixels = new float[floatCount];
+
+    for (size_t t = 0; t < floatCount; ++t) pixels[t] = 0.0f;
 
     cl_int error;
-    this->buffer = cl::Buffer(params.context,
-                              CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-                              this->size, this->pixels, &error);
+    pb = cl::Buffer(params.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+                    floatCount * sizeof(float), pixels, &error);
     Error::Check(Error::Memory, error);
 
-    this->index = 0;
-    fprintf(stderr, " complete.\n\n");
+    fprintf(stderr, "Initialization complete.\n\n");
 }
 
 PixelBuffer::~PixelBuffer()
 {
     Acquire(params);
-    ConvertToRGB();
-    Tonemap();
-    GammaCorrect();
     WriteToFile(params.output);
 
-    delete[] this->pixels;
+    delete[] pixels;
 }
 
 void PixelBuffer::Update(size_t /* index */)
 {
-    this->index++;
+    return;
 }
 
 void* PixelBuffer::Query(size_t /* query */)
@@ -83,77 +79,56 @@ void* PixelBuffer::Query(size_t /* query */)
 
 void PixelBuffer::Bind(cl_uint* index)
 {
-    fprintf(stderr, "Binding <buffer@PixelBuffer> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg((*index)++, buffer));
+    fprintf(stderr, "Binding <pb@PixelBuffer> to index %u.\n", *index);
+    Error::Check(Error::Bind, params.kernel.setArg((*index)++, pb));
 }
 
 void PixelBuffer::Acquire(const EngineParams& params)
 {
     cl_int error;
-    error = params.queue.enqueueReadBuffer(this->buffer, CL_TRUE, 0,
-                                           this->size, this->pixels);
+    size_t bufSize = params.width * params.height * sizeof(float) * 4;
+    error = params.queue.enqueueReadBuffer(pb, CL_TRUE, 0, bufSize, pixels);
     Error::Check(Error::CLIO, error);
-}
-
-void PixelBuffer::Upload(const EngineParams& params)
-{
-    cl_int error;
-    error = params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
-                                            this->size, this->pixels);
-    Error::Check(Error::CLIO, error);
-}
-
-void PixelBuffer::ConvertToRGB()
-{
-    /* Go over each pixel. */
-    for (size_t t = 0; t < this->width * this->height; ++t)
-    {
-        this->pixels[t].XYZToRGB();
-    }
-}
-
-void PixelBuffer::Tonemap()
-{
-    float logAvg = 0.0f;
-    for (size_t t = 0; t < this->width * this->height; ++t)
-    {
-        float luminance = this->pixels[t].Luminance();
-        logAvg += log(luminance + EPSILON);
-    }
-
-    logAvg = exp(logAvg / (this->width * this->height));
-    const float exposure = 0.18f;
-
-    for (size_t t = 0; t < this->width * this->height; ++t)
-    {
-        this->pixels[t].Tonemap(logAvg, exposure);
-    }
-}
-
-void PixelBuffer::GammaCorrect()
-{
-    for (size_t t = 0; t < this->width * this->height; ++t)
-    {
-        this->pixels[t].GammaCorrect();
-    } 
 }
 
 void PixelBuffer::WriteToFile(std::string path)
 {
     std::ofstream file;
-    file.open(path);
+    file.open(path, std::ios::out | std::ios::binary);
 
-    /* Write PPM header. */
-    file << "P3" << std::endl << this->width << " " << this->height << " 255";
-    file << std::endl;
+    /* Print Radiance's HDR header. */
+    file << "#?RADIANCE" << std::endl;
+    file << "SOFTWARE=epsilon v0.13" << std::endl;
+    file << "FORMAT=32-bit_rle_xyze" << std::endl << std::endl;
+    file << "-Y " << params.width << " +X " << params.height << std::endl;
 
-    /* Write pixels as they are in the buffer (may not be in RGB format). */
-    for (size_t t = 0; t < this->width * this->height; ++t)
+    for (size_t t = 0; t < params.width * params.height; ++t)
     {
-        int r, g, b;
-        this->pixels[t].ByteRGB(&r, &g, &b);
+        /* Read pixel components. */
+        float a = pixels[t * 4 + 0];
+        float b = pixels[t * 4 + 1];
+        float c = pixels[t * 4 + 2];
+        float n = pixels[t * 4 + 3];
 
-        file << r << " " << g << " " << b << " ";
+        /* Scaling. */
+        if (n != 0.0f)
+        {
+            a /= n;
+            b /= n;
+            c /= n;
+        }
+
+        /* Convert to shared-exponent (see Radiance: HDR format) encoding. */
+        uint8_t e = ceil(log(std::max(a, std::max(b, c))) / log(2.0f) + 128);
+        uint8_t x = floor((256 * a) / pow(2.0f, e - 128));
+        uint8_t y = floor((256 * b) / pow(2.0f, e - 128));
+        uint8_t z = floor((256 * c) / pow(2.0f, e - 128));
+
+        /* Write the bytes out to the image. */
+        file.write((char*)&x, sizeof(uint8_t));
+        file.write((char*)&y, sizeof(uint8_t));
+        file.write((char*)&z, sizeof(uint8_t));
+        file.write((char*)&e, sizeof(uint8_t));
     }
 
     file.close();

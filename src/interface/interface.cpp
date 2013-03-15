@@ -348,7 +348,7 @@ void Interface::GiveStatistics(Statistics statistics)
         double speed = width * height * pass_speed * 1e-6;
 
         ss << std::fixed;
-        ss.precision(1);
+        ss.precision(2);
 
         ss << pass_speed << " passes/second [" << speed << " MPP/s]";
         attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);

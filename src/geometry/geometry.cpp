@@ -274,13 +274,17 @@ std::vector<Triangle*> ParseModel(std::fstream &obj, ModelInfo info)
             }
             else if (tokens[0] == "f") /* Parse this face (triangle). */
             {
-                uint32_t v1 = atoi(tokens[1].c_str()) - 1;
-                uint32_t v2 = atoi(tokens[2].c_str()) - 1;
-                uint32_t v3 = atoi(tokens[3].c_str()) - 1;
+                uint32_t v[3]; /* Vertices. */
 
-                Triangle* t = new Triangle(*vertices[v1],
-                                           *vertices[v2],
-                                           *vertices[v3],
+                for (size_t t = 0; t < 3; ++t)
+                {
+                    std::vector<std::string> res = split(tokens[t + 1], '/');
+                    v[t] = atoi(res[0].c_str()) - 1; /* Only need vertices. */
+                }
+
+                Triangle* t = new Triangle(*vertices[v[0]],
+                                           *vertices[v[1]],
+                                           *vertices[v[2]],
                                            info.modelID);
 
                 triangles.push_back(t);
@@ -351,7 +355,7 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
     {
         std::string m = triangleList[t]->model;
         triangleList[t]->material = std::distance(modelList.begin(),
-                                                  modelList.find(m));
+                                                  modelList.find(m)) + 1;
     }
 
     cl_int error;

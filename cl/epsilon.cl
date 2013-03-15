@@ -202,8 +202,10 @@ void kernel clmain(   global   float4        *buffer,
 
     /* Media stack. */
     uint matStack[MT];
-    matStack[0] = 0;
     uint matPos = 0;
+
+    /* Atmospheric medium. */
+    matStack[0] = mapping[0];
 
     /* Select random wavelength. */
     float wavelength = rand(&prng);
@@ -232,11 +234,11 @@ void kernel clmain(   global   float4        *buffer,
         /* Obtain the triangle's correct matID. */
         uint mappingMatID = mapping[triangle.mat];
 
-        /* Obtain the medium absorption coefficient. */
-        float k_a = absorption(matStack[matPos], w_nm);
+        /* Calculate medium absorption coefficient. */
+        float ke = absorption(matStack[matPos], w_nm);
 
-        /* Find expected scattering distance. */
-        float s_d = -log(1 - rand(&prng)) / k_a;
+        /* Expected scattering distance. */
+        float s_d = -log(rand(&prng)) / ke;
 
         /* Scatter? */
         if (s_d < t_d)
@@ -259,10 +261,10 @@ void kernel clmain(   global   float4        *buffer,
             float3 w_n = (float3)(v_b.y, v_n.y, v_t.y);
             float3 w_t = (float3)(v_b.z, v_n.z, v_t.z);
 
-            /* Scatter ray using the current material's properties. */
+            /* Scatter the ray by using this material's properties. */
             float4 scattered = scatter(matStack[matPos], w_nm, &prng);
             direction = scattered.xyz;
-            radiance = scattered.w;
+            radiance  = scattered.w;
 
             /* Go back to world space. */
             direction = direction.x * v_b
@@ -292,9 +294,12 @@ void kernel clmain(   global   float4        *buffer,
                       + direction.y * w_n
                       + direction.z * w_t;
 
-            /* Check if this triangle, is actually a light source. */
+            /* Check if the triangle emits light, and if so, stop. */
             radiance = exitant(mappingMatID, w_nm, direction, &prng);
-            if (radiance > 0) break; /* This was a light source... */
+            if (radiance > 0.0f) break; /* This is a light source. */
+
+            /* Nested media? */
+            bool nested = true;
 
             /* Select the right media at the interface. */
             uint in = matStack[matPos], to = mappingMatID;
@@ -302,20 +307,22 @@ void kernel clmain(   global   float4        *buffer,
             {
                 /* Leaving this medium. */
                 to = matStack[matPos - 1];
+                nested = false;
             }
 
             /* Reflect this ray, by using the reflectance function.. */
-            float4 reflected = reflect(in, to, w_nm, direction, &prng);
+            float4 reflected = reflect(in, to, w_nm, direction, &prng,
+                                       nested);
             direction = reflected.xyz;
-            radiance = reflected.w;
+            radiance  = reflected.w;
 
             /* Go back to world space. */
             direction = direction.x * v_b
                       + direction.y * v_n
                       + direction.z * v_t;
 
-            /* Did this ray get transmitted, reflected? */
-            if (dot(reflected.xyz, (float3)(0, 1, 0)) < 0)
+            /* Is ray reflected? */
+            if (reflected.y < 0.0f)
             {
                 /* Ray is transmitted. */
                 origin += (-v_n) * PSHBK;
@@ -335,13 +342,13 @@ void kernel clmain(   global   float4        *buffer,
             }
         }
 
-        /* Russian Roulette, probabilistically discard rays. */
+        /* Perform adaptive russian roulette here (discard). */
         if (rand(&prng) > radiance) { radiance = 0.0f; break; }
     }
 
     /* Convert this spectral sample to a color using the spectral curve. */
     float3 xyz = radiance * read_imagef(spectrum, sampler, wavelength).xyz;
 
-    /* Finally - add this sample to the pixel buffer. */
-    buffer[get_global_id(0)] += (float4)(xyz, radiance);
+    /* Accumulate this sample into the buffer. */
+    buffer[get_global_id(0)] += (float4)(xyz, 1);
 }

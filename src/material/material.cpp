@@ -28,9 +28,13 @@ Materials::Materials(EngineParams& params) : KernelObject(params)
 
     /* ModelID - MatID mapping. */
     std::vector<cl_uint> matMapping;
-    matMapping.resize(modelList.size());
+    matMapping.resize(modelList.size() + 1);
+    
+    /* Get the atmospheric material. */
+    pugi::xml_node node = doc.child("materials").child("atmosphere");
+    matMapping.push_back(node.attribute("MatID").as_uint());
 
-    size_t index = 0;
+    size_t index = 1;
     std::set<std::string>::iterator iter;
     for (iter = modelList.begin(); iter != modelList.end(); ++iter)
     {

@@ -11,7 +11,7 @@
   * function, higher means greater quality but at a higher computational cost,
   * 4 recommended at a minimum, 9 is more than enough.
 **/
-#define ROUNDS 6
+#define ROUNDS 4
 
 /* This is a 512-bit > 256-bit one-way function. */
 /** One-way pseudorandom function, from 512 bits to 256 bits.

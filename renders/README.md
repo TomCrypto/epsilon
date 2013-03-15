@@ -44,3 +44,9 @@ This is a curious render. Basically, it is the previous render's buddha statue,
 with more or less the same absorbing material, and inside it, the same model is
 duplicated with a slightly smaller scale, and as a light source instead. As you
 can see, the results are interesting. Note the caustic on the ceiling.
+
+<p align="center">
+<img src="https://raw.github.com/TomCrypto/epsilon/master/renders/tonemapping.png" alt="Tonemapping"/>
+</p>
+This demonstrates the new HDR output feature - each of the three renders uses a
+different tonemapping method, computed in an external program.
