@@ -47,3 +47,4 @@ tools/
 *.depend
 *.layout
 *.cbTemp
+*.out

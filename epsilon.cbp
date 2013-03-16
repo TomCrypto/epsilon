@@ -21,17 +21,34 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-O2" />
+					<Add option="-march=core2" />
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-O3" />
+					<Add option="-pg" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add option="-pg" />
+				</Linker>
+			</Target>
+			<Target title="Profile">
+				<Option output="bin/epsilon" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-march=core2" />
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-O3" />
+					<Add option="-pg" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add option="-pg" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-march=core2" />
-			<Add option="-fexpensive-optimizations" />
-			<Add option="-O3" />
 			<Add option="-std=c++0x" />
 			<Add option="-Wall" />
 			<Add option="-fexceptions -DCL_USE_DEPRECATED_OPENCL_1_1_APIS -Wno-cpp -Wall -Wextra -pedantic -pipe" />
@@ -39,7 +56,6 @@
 			<Add directory="./include/" />
 		</Compiler>
 		<Linker>
-			<Add option="-s" />
 			<Add library="ncurses" />
 			<Add library="OpenCL" />
 		</Linker>

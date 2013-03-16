@@ -38,7 +38,8 @@ Renderer::Renderer(size_t width, size_t height, size_t passes,
     params.program = cl::Program(params.context, data, &error);
     Error::Check(Error::Program, error);
 
-    cl_int build_error = params.program.build(devices, "-I cl/");
+    const char* options = "-cl-std=CL1.1 -I cl/";
+    cl_int build_error = params.program.build(devices, options);
 
     std::string log;
     error = params.program.getBuildInfo(params.device, CL_PROGRAM_BUILD_LOG,
