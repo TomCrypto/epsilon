@@ -1,4 +1,5 @@
 #include <render/render.hpp>
+#include <common/version.hpp>
 
 struct __attribute__ ((packed)) cl_buffer
 {
@@ -98,8 +99,9 @@ void PixelBuffer::WriteToFile(std::string path)
 
     /* Print Radiance's HDR header. */
     file << "#?RADIANCE" << std::endl;
-    file << "SOFTWARE=epsilon v0.13" << std::endl;
+    file << "SOFTWARE=epsilon " << GetRendererVersion() << std::endl;
     file << "FORMAT=32-bit_rle_xyze" << std::endl << std::endl;
+
     file << "-Y " << params.width << " +X " << params.height << std::endl;
 
     for (size_t t = 0; t < params.width * params.height; ++t)

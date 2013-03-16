@@ -19,6 +19,7 @@
 #define COLOR_TITLE2 3
 #define COLOR_ERROR  4
 #define COLOR_STATUS 5
+#define COLOR_PGBAR  6
 
 Interface::Interface()
 {
@@ -33,6 +34,7 @@ Interface::Interface()
         init_pair(COLOR_TITLE2, COLOR_CYAN,  COLOR_BLACK);
         init_pair(COLOR_ERROR,  COLOR_RED,   COLOR_BLACK);
         init_pair(COLOR_STATUS, COLOR_GREEN, COLOR_BLACK);
+        init_pair(COLOR_PGBAR,  COLOR_WHITE, COLOR_GREEN);
     }
 
     DrawFrame();
@@ -275,11 +277,13 @@ void Interface::DisplayProgress(double progress)
     size_t prog = (size_t)(progress * 54);
     size_t count = (prog > 27) ? prog + 6 : prog;
 
-    attron(COLOR_PAIR(COLOR_TITLE1)); attron(A_BOLD);
+    attron(COLOR_PAIR(COLOR_PGBAR)); attron(A_BOLD);
 
     /* Progress bar drawn here. */
     for (size_t t = 0; t < count; ++t)
-        mvaddch(LINE_PROGRESS, 18 + t, ACS_CKBOARD);
+        mvaddch(LINE_PROGRESS, 18 + t, ' ');
+
+    attron(COLOR_PAIR(COLOR_TITLE1)); attron(A_BOLD);
 
     mvprintw(LINE_PROGRESS, 45, " %.3d%% ", (int)(progress * 100));
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
