@@ -6,6 +6,8 @@
 #include <ncurses.h>
 #endif
 
+#include <common/version.hpp>
+
 #include <CL/cl.hpp>
 #include <iomanip>
 #include <sstream>
@@ -44,6 +46,9 @@ class Interface
     private:
         /** @brief The underlying curses window. **/
         WINDOW* window;
+
+        /** @brief Draws the interface borders. **/
+        void DrawBorders();
 
         /** @brief Draws the interface outline. **/
         void DrawFrame();
@@ -103,7 +108,7 @@ class Interface
           *       ellipsis.
         **/
         void DisplayStatus(std::string msg, bool error);
-        
+
         /** @brief Takes statistics from the engine and displays them.
           * @param statistics The engine statistics.
         **/

@@ -33,6 +33,7 @@ doc/
 # Renders and binary data
 excluded/
 *.ppm
+*.hdr
 
 # Logs
 *.log
@@ -41,3 +42,8 @@ excluded/
 tools/
 *.py
 *.py~
+
+# Code::Blocks stuff
+*.depend
+*.layout
+*.cbTemp

@@ -80,7 +80,7 @@ void Interface::DisplayStatus(std::string message, bool error)
     Redraw();
 }
 
-void Interface::DrawFrame()
+void Interface::DrawBorders()
 {
     box(this->window, 0, 0);
 
@@ -115,10 +115,16 @@ void Interface::DrawFrame()
             if (t < 6) mvaddch(t, 63, ACS_VLINE);
         }
     }
+}
+
+void Interface::DrawFrame()
+{
+    DrawBorders();
 
     /* Write the title at the top of the terminal. */
     attron(COLOR_PAIR(COLOR_TITLE2)); attron(A_BOLD);
-    mvprintw(1, 2, "   epsilon"); mvprintw(1, 65, "    v0.13");
+    mvprintw(1, 2, "   epsilon");
+    mvprintw(1, 69, GetRendererVersion().c_str());
     attron(COLOR_PAIR(COLOR_TITLE1)); attron(A_BOLD);
     mvprintw(1, 23, "Physically Based Spectral Renderer");
 
@@ -137,17 +143,12 @@ void Interface::DrawFrame()
     mvprintw(LINE_STATISTICS, 2, "Engine Stats.");
 }
 
-#include <algorithm> 
-#include <functional> 
-#include <cctype>
-#include <locale>
-
 /* Trims a string. */
 void trim(std::string& str)
 {
     std::string::size_type pos1 = str.find_first_not_of(' ');
     std::string::size_type pos2 = str.find_last_not_of(' ');
-    str = str.substr(pos1 == std::string::npos ? 0 : pos1, 
+    str = str.substr(pos1 == std::string::npos ? 0 : pos1,
                      pos2 == std::string::npos ? str.length() - 1
                      : pos2 - pos1 + 1);
 }
@@ -168,15 +169,15 @@ bool Interface::GetInput()
     platformIndex = 0;
     DisplayStatus("Please select the OpenCL platform (left/right arrow keys).",
                   false);
-   
-    key = 0; 
+
+    key = 0;
     while (key != '\n')
     {
         std::string name;
 
         platform = platforms[platformIndex];
         size_t count = platforms.size();
-        
+
         platform.getInfo(CL_PLATFORM_NAME, &name);
         trim(name);
 
@@ -206,7 +207,7 @@ bool Interface::GetInput()
 
         device = devices[deviceIndex];
         size_t count = devices.size();
-        
+
         device.getInfo(CL_DEVICE_NAME, &name);
         trim(name);
 
@@ -230,26 +231,37 @@ bool Interface::GetInput()
     mvgetnstr(LINE_SCENEFILE, 18, input, 60);
     source = input;
 
+    /* Redraw borders (fixes a weird PDCurses bug). */
+    DrawBorders();
+
     /* Get output file. */
     DisplayStatus("Please enter the output image.", false);
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
     mvgetnstr(LINE_OUTPUTFILE, 18, input, 60);
     output = input;
 
+    DrawBorders();
+
     /* Get render width and height. */
     DisplayStatus("Please enter the render width and height.", false);
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
     mvgetnstr(LINE_WIDTH, 18, input, 6);
     width = atoi(input);
-    
+
+    DrawBorders();
+
     mvgetnstr(LINE_HEIGHT, 18, input, 6);
     height = atoi(input);
+
+    DrawBorders();
 
     /* Get the passes per pixel count. */
     DisplayStatus("Please enter the passes (per pixel) desired.", false);
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
     mvgetnstr(LINE_PASSES, 18, input, 8);
     passes = atoi(input);
+
+    DrawBorders();
 
     SetInput(false);
     } catch (...) { return false; }
@@ -313,7 +325,7 @@ std::string FormatTriangles(uint32_t triangles)
     std::stringstream stream;
     stream << std::fixed;
     stream.precision(1);
-    
+
     if      (triangles >= 1e6) stream << triangles / 1.0e6 << "M";
     else if (triangles >= 1e3) stream << triangles / 1.0e3 << "K";
     else stream << triangles;
@@ -324,7 +336,7 @@ std::string FormatTriangles(uint32_t triangles)
 void Interface::GiveStatistics(Statistics statistics)
 {
     DisplayProgress(statistics.progress);
-    
+
     /* This is just to make sure we don't get issues. */
     if (statistics.progress == 1.0) statistics.remains = 0.0;
 

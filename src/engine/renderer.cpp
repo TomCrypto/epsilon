@@ -29,8 +29,8 @@ Renderer::Renderer(size_t width, size_t height, size_t passes,
 
     fprintf(stderr, "Building OpenCL kernel.\n");
 
-    /* This is a cheap trick to load programs. */
-    const char* src = "#include <cl/epsilon.cl>";
+    /* Cheap trick, for loading CL kernels. */
+    const char* src = "#include <epsilon.cl>";
 
     cl::Program::Sources data; /* We don't need multi-program support. */
     data = cl::Program::Sources(1, std::make_pair(src, strlen(src) + 1));
@@ -82,7 +82,7 @@ bool Renderer::Execute()
     bool info = (currentPass == 0);
     if (info) fprintf(stderr, "Executing first pass.\n");
     else if (currentPass == 1) fprintf(stderr, "Executing passes...\n\n");
-    
+
     cl_int error;
     size_t local, global = params.width * params.height;
     error = params.kernel.getWorkGroupInfo(params.device,
@@ -112,7 +112,7 @@ bool Renderer::Execute()
         {
             cl::NDRange localSize(local), globalSize(slice);
             cl::NDRange offsetRange(offset);
-            
+
             if (info) fprintf(stderr, "-----> Launching kernel.\n");
             error = params.queue.enqueueNDRangeKernel(params.kernel,
                                                       offsetRange,

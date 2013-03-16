@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="epsilon" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/epsilon" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/epsilon" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-std=c++0x" />
+			<Add option="-Wall" />
+			<Add option="-fexceptions -DCL_USE_DEPRECATED_OPENCL_1_1_APIS -Wno-cpp -Wall -Wextra -pedantic -pipe" />
+			<Add option="-DCL_USE_DEPRECATED_OPENCL_1_1_APIS -Wno-cpp" />
+			<Add directory="./include/" />
+		</Compiler>
+		<Linker>
+			<Add library="ncurses" />
+			<Add library="OpenCL" />
+		</Linker>
+		<Unit filename="cl/camera.cl" />
+		<Unit filename="cl/epsilon.cl" />
+		<Unit filename="cl/material.cl" />
+		<Unit filename="cl/materials/blackbody.cl" />
+		<Unit filename="cl/materials/glass.cl" />
+		<Unit filename="cl/materials/matte.cl" />
+		<Unit filename="cl/prng.cl" />
+		<Unit filename="cl/triangle.cl" />
+		<Unit filename="cl/util.cl" />
+		<Unit filename="include/common/error.hpp" />
+		<Unit filename="include/common/query.hpp" />
+		<Unit filename="include/common/version.hpp" />
+		<Unit filename="include/engine/architecture.hpp" />
+		<Unit filename="include/engine/renderer.hpp" />
+		<Unit filename="include/geometry/geometry.hpp" />
+		<Unit filename="include/interface/interface.hpp" />
+		<Unit filename="include/material/material.hpp" />
+		<Unit filename="include/math/aabb.hpp" />
+		<Unit filename="include/math/camera.hpp" />
+		<Unit filename="include/math/prng.hpp" />
+		<Unit filename="include/math/vector.hpp" />
+		<Unit filename="include/misc/misc.hpp" />
+		<Unit filename="include/misc/pugiconfig.hpp" />
+		<Unit filename="include/misc/pugixml.hpp" />
+		<Unit filename="include/misc/xmlutils.hpp" />
+		<Unit filename="include/render/render.hpp" />
+		<Unit filename="include/render/spectral.hpp" />
+		<Unit filename="src/common/error.cpp" />
+		<Unit filename="src/common/query.cpp" />
+		<Unit filename="src/common/version.cpp" />
+		<Unit filename="src/engine/renderer.cpp" />
+		<Unit filename="src/geometry/geometry.cpp" />
+		<Unit filename="src/interface/interface.cpp" />
+		<Unit filename="src/main.cpp" />
+		<Unit filename="src/material/material.cpp" />
+		<Unit filename="src/math/camera.cpp" />
+		<Unit filename="src/math/prng.cpp" />
+		<Unit filename="src/math/vector.cpp" />
+		<Unit filename="src/misc/misc.cpp" />
+		<Unit filename="src/misc/pugixml.cpp" />
+		<Unit filename="src/misc/xmlutils.cpp" />
+		<Unit filename="src/render/render.cpp" />
+		<Unit filename="src/render/spectral.cpp" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

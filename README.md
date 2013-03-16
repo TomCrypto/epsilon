@@ -10,13 +10,13 @@ The εpsilon renderer is coded in C++11, and is powered by OpenCL.
 
 Work is currently being put into the following:
 
-- Material system (only diffuse for testing at the moment)
+- Material system
+
+- Scattering, and sky system
+
+- Miscellaneous engine improvements
 
 - Optimizations (BVH traversal is unoptimized)
-
-- Scene editor (this is not a priority)
-
-- Documentation (mostly cpp/cl files)
 
 Features
 --------
@@ -29,19 +29,26 @@ Features
 
 - Support for arbitrarily complex scenes.
 
-- Nice console user interface.
+- Nice console-based user interface.
 
-- Uses XML for scene data.
+- Uses XML/obj for scene data.
 
 - Doxygen documentation.
 
 - Concise error log.
+
+- HDR output.
 
 Usage
 -----
 
 First, build the renderer with your favorite C++11 compiler. Make sure it runs,
 and that you actually have an OpenCL device, otherwise it will not do anything.
+
+Linux users will probably find the provided makefile most useful, but feel free
+to use the provided Code::Blocks project file (epsilon.cbp). Under Windows, you
+may have to negociate some library/header paths in the project options, it will
+then hopefully build without errors.
 
 Run the renderer, and you will be presented with a console-based UI. Select the
 OpenCL platform which contains the device you want to use - you probably have a
@@ -84,10 +91,9 @@ src="https://raw.github.com/TomCrypto/epsilon/master/extra/working.png"
 alt="Renderer interface"/>
 </p>
 
-And below is how it looks on Windows. Note 'Cayman' is my GPU's marketing name.
-Also notice the curious border glitch, which will be fixed soon. Performance is
-not great at the moment for large scenes however the tree traversal has not yet
-been looked over.
+And below is how it looks on Windows. Note 'Cayman' is my GPU's brand name. The
+performance is not great at the moment for large scenes, as the datastructure's
+traversal code is more or less designed for CPU's (uses a stack):
 
 <p align="center">
 <img
@@ -143,15 +149,14 @@ And then rebuild all. The currently available build flags are listed below:
 Troubleshooting
 ---------------
 
-- **Q**: I am on Windows and the compiler is complaining about `(n)curses.h`.
+- **Q**: I am on Windows and the compiler is complaining about `curses.h`.
 
   **A**: `ncurses` is Linux-only. But fear not, a Windows implementation exists
          under the name `PDCurses`. You should be able to find it online - note
          I did not find a prebuilt 64-bit version of this library, so you might
          have to build it yourself if you want 64-bit support.
          When you have the library installed in your favorite compiler you just
-         need to replace `ncurses.h` by `curses.h`, and link to `PDCurses`, not
-         `ncurses`, and everthing should now work.
+         need to link to `PDCurses` instead of `ncurses`, it should now work.
 
 - **Q**: I am getting many compiler errors, regarding various OpenCL functions,
          such as undefined references, undefined types, and so on.
@@ -163,29 +168,22 @@ Troubleshooting
          follows: `#include <cl/epsilon.cl> file not found`.
 
   **A**: This means the OpenCL compiler can't find the kernel files - this is a
-         known issue for the APP OpenCL runtime, and the fix is as follows:
-
-1. Go into `src/engine/renderer.cpp`, find the offending line and rename
-   the line with the absolute path (on your system) to `epsilon.cl`. Use
-   quotes instead of angled brackets, e.g `#include "/path/to/epsilon.cl"`
-
-2. Do the same for every `#include` directive found in the `cl/` folder.
-
-3. Rebuild the renderer, and try again, the error should not occur.
+         known issue for the APP OpenCL runtime and one workaround is to simply
+         add the `cl/` directory to the system's $PATH environment variable. If
+         this does not work, the brute force "fix" is to manually override each
+         #include directive regarding `*.cl` files, and hardcode their absolute
+         path in (using quotes instead of angled brackets). These exist in most
+         `*.cl` files, as well as in `src/engine/renderer.cpp`.
 
 Why does this happen? We don't know - APP seems to have issues regarding
 include directives, and we cannot reasonably fix this in the renderer.
-
-Another reported fix, is to add the `cl/` directory to your system PATH,
-which should technically fix the error in a less (or more, depending on
-your perspective) intrusive manner.
 
 - **Q**: I tried the renderer on my processor, it worked. But when I try to run
          it on the GPU, it freezes and nothing happens (or my screen crashes)!
 
   **A**: The current kernel is implemented as an infinite loop for convenience,
          which can cause problems with GPU's. To remedy this, simply change the
-         loop  into a `for` construct with, say, 8 or 9 iterations. Try again.
+         loop  into a `for` construct with, say, 20 iterations, and try again.
 
 - **Q**: I'm having incomprehensible compilation errors under Windows.
 
