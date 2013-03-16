@@ -14,6 +14,8 @@
   * handling code. Each material ID has its own OpenCL file, this is just one
   * giant switch statement. You are meant to add your own materials, so, feel
   * free to edit this file.
+  *
+  * \todo Finalize the material system's interface.
 **/
 
 /** @brief Vacuum, used as an atmosphere for non-volumetric renders. **/
@@ -127,6 +129,7 @@ float4 scatter(uint matID, float w, PRNG *prng)
   * @param w The light's wavelength.
   * @param incident The incident ray, in TBN space.
   * @param prng a PRNG instance.
+  * @param nested Whether the \c to medium is nested inside the \c in medium.
   * @returns An importance-sampled reflected or transmitted ray, in TBN space.
   *          Rotate via the TBN basis to obtain the ray in world space.
   * @note To verify if the ray was transmitted or not, it is enough to check
