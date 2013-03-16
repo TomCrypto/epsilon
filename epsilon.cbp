@@ -24,11 +24,9 @@
 					<Add option="-march=core2" />
 					<Add option="-fexpensive-optimizations" />
 					<Add option="-O3" />
-					<Add option="-pg" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add option="-pg" />
 				</Linker>
 			</Target>
 			<Target title="Profile">
