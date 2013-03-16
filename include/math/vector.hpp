@@ -1,8 +1,6 @@
 #pragma once
 
-#include <algorithm>
 #include <CL/cl.hpp>
-#include <cmath>
 
 /** @file vector.hpp
   * @brief Vector manipulation.

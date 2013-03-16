@@ -3,6 +3,8 @@
 #include <misc/xmlutils.hpp>
 #include <misc/pugixml.hpp>
 
+#include <cmath>
+
 struct cl_data
 {
     cl_float4 p[4];     /* Focal plane.                                   */

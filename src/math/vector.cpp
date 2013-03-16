@@ -1,5 +1,7 @@
 #include <math/vector.hpp>
 
+#include <algorithm>
+
 float dot(const Vector& a, const Vector& b)
 {
     return a.x * b.x

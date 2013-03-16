@@ -1,6 +1,8 @@
 #include <render/render.hpp>
 #include <common/version.hpp>
 
+#include <cmath>
+
 struct __attribute__ ((packed)) cl_buffer
 {
     cl_uint width, height, pass;
