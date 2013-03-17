@@ -2,8 +2,8 @@
 
 float glass_abs(float wavelength)
 {
-    float w = wavelength * 1e9;
-    return 1e-5 + 1.2 * (1 - exp(-pow(w - 650, 2) * 0.001f));
+    float w = wavelength * 1e9f;
+    return 1e-5f + 1.2f * (1 - exp(-pow(w - 650, 2) * 0.001f));
 }
 
 /* Smooth glass material. */

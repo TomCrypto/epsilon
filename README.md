@@ -185,14 +185,6 @@ include directives, and we cannot reasonably fix this in the renderer.
          which can cause problems with GPU's. To remedy this, simply change the
          loop  into a `for` construct with, say, 20 iterations, and try again.
 
-- **Q**: I'm having incomprehensible compilation errors under Windows.
-
-  **A**: I've encountered a situation, under Windows, where many variable names
-         used by the renderer happen to be macros under MinGW, for instance the
-         names `far`, `near`, `interface`, etc... If everything else fails, try
-         renaming those variables something else. But this really should not be
-         happening and a compiler misconfiguration could be the cause.
-
 License
 -------
 

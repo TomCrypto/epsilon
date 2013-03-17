@@ -32,8 +32,8 @@ Renderer::Renderer(size_t width, size_t height, size_t passes,
     /* Cheap trick, for loading CL kernels. */
     const char* src = "#include <epsilon.cl>";
 
-    cl::Program::Sources data; /* We don't need multi-program support. */
-    data = cl::Program::Sources(1, std::make_pair(src, strlen(src) + 1));
+    cl::Program::Sources data; /* Don't need multi-kernel support. */
+    data = cl::Program::Sources(1, std::make_pair(src, strlen(src)));
 
     params.program = cl::Program(params.context, data, &error);
     Error::Check(Error::Program, error);

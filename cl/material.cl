@@ -144,10 +144,10 @@ float4 reflect(uint in, uint to, float w, float3 incident, PRNG *prng,
 {
     switch (nested? to : in)
     {
-        case DIFFUSE_WHITE: return matte_flat(w, prng, 0.8);
-        case DIFFUSE_RED: return matte_peak(w, prng, 640, 0.001f, 0.55);
-        case DIFFUSE_BLUE: return matte_peak(w, prng, 460, 0.001f, 0.55);
-        case DIFFUSE_GREEN: return matte_peak(w, prng, 525, 0.01f, 0.55);
+        case DIFFUSE_WHITE: return matte_flat(w, prng, 0.8f);
+        case DIFFUSE_RED: return matte_peak(w, prng, 640, 0.001f, 0.55f);
+        case DIFFUSE_BLUE: return matte_peak(w, prng, 460, 0.001f, 0.55f);
+        case DIFFUSE_GREEN: return matte_peak(w, prng, 525, 0.01f, 0.55f);
         case GLASS_RED:
         {
             float n1 = index(in, w);

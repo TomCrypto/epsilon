@@ -40,7 +40,7 @@ bool RayTriangle(float3 o, float3 d, Triangle triangle, float *distance)
 {
     o -= triangle.p1.xyz;
     float3 s = cross(d, triangle.e2.xyz);
-    float de = 1.0 / dot(s, triangle.e1.xyz);
+    float de = 1.0f / dot(s, triangle.e1.xyz);
 
     float u = dot(o, s) * de;
 

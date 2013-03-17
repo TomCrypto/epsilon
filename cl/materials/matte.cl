@@ -15,7 +15,7 @@ float4 matte_peak(float w, PRNG *prng, float peak, float dev, float albedo)
     float u = rand(prng), v = rand(prng);
     float a = 2 * 3.14169265f * v;
     float r = sqrt(u);
-    w *= 1e9;
+    w *= 1e9f;
 
     float3 reflected = (float3)(r * cos(a), sqrt(1.0f - u), r * sin(a));
     float intensity = exp(-pow(w - peak, 2) * dev);

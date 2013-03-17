@@ -2,6 +2,11 @@
 
 #include <math/vector.hpp>
 
+#ifdef _WIN32
+#undef near
+#undef far
+#endif
+
 /** @file aabb.hpp
   * @brief Bounding box manipulation.
   *

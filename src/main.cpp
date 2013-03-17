@@ -5,6 +5,10 @@
 #include <cstdlib>
 #include <cstdio>
 
+#ifdef _WIN32
+#undef interface
+#endif
+
 /* To ensure log cleanly ends, fd automatically closed. */
 void end(void) { fprintf(stderr, "\n--- END LOG ---\n"); }
 

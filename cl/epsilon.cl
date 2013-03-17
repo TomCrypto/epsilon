@@ -155,9 +155,9 @@ typedef struct __attribute__ ((packed)) Params
 } Params;
 
 /* Image sampler, using texel linear interpolation. */
-const sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
-                          CLK_ADDRESS_CLAMP_TO_EDGE  |
-                          CLK_FILTER_LINEAR;
+constant sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
+                             CLK_ADDRESS_CLAMP_TO_EDGE  |
+                             CLK_FILTER_LINEAR;
 
 /** This is the main kernel, which performs the entire ray tracing step.
   * @param buffer The pixel buffer, as a flat 2D array.
@@ -210,8 +210,8 @@ void kernel clmain(   global   float4        *buffer,
     /* Select random wavelength. */
     float wavelength = rand(&prng);
 
-    /* Convert this to a nanometer wavelength. */
-    float w_nm = (wavelength * 400 + 380) * 1e-9;
+    /* Convert this wavelength into nanometers. */
+    float w_nm = (wavelength * 400 + 380) * 1e-9f;
 
     /* Find light path. */
     float radiance = 0.0f;
