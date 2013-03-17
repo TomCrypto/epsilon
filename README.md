@@ -31,7 +31,7 @@ Features
 
 - Nice console-based user interface.
 
-- Uses XML/obj for scene data.
+- Uses XML/OBJ for scene data.
 
 - Doxygen documentation.
 

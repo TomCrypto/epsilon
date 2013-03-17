@@ -17,7 +17,12 @@ Todo:
 X fix the interface scrolling through platforms/devices, which *still* doesn't
   work for some reason.
 
-- PDCurses seems to have issues with getstr(), and tends to overwrite borders.
+X PDCurses seems to have issues with getstr(), and tends to overwrite borders.
   Fix this by redrawing the border after each field input under Windows.
 
-- Damn macros under Windows/MinGW, need to fix that.
+X Damn macros under Windows/MinGW, need to fix that.
+
+- Make sure the infinite loop in the kernel actually terminates in reasonable
+  time (not just theoretically). Perhaps modify russian roulette to enforce
+  a sensible minimum probability of failure, but this could cause issues for
+  scenes with very deep ray paths (subsurface scattering, notably).
