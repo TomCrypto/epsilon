@@ -227,6 +227,13 @@ void Triangle::CL(cl_triangle *out)
 
 /******************************************************************************/
 
+/* NOTE TO MSVC USERS - replace __attribute ((packed)) with:
+ * 
+ * #pragma pack(push, 1)
+ * ... structure ...
+ * #pragma pack(pop)
+*/
+
 struct __attribute__ ((packed)) cl_node
 {
     cl_float4 bbox_min;

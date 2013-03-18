@@ -112,6 +112,9 @@ __WINDOWS__: The renderer is compatible with the latest MinGW distribution, and
              It may be necessary to tweak the code a little bit if features are
              missing, but nothing too hard, at least for MinGW. We're making it
              better, one #ifdef at a time.
+             The code does compile under Visual Studio C++ 2010 with a fair bit
+             of effort (C++11 isn't apparently fully supported) but nothing too
+             hard.
 
 __MAC__: Status unknown - the renderer has never been tested under Mac OS X. If
          you want to help out with Mac support, drop me a line (contact details

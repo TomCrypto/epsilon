@@ -1,12 +1,13 @@
 #include <interface/interface.hpp>
 #include <engine/renderer.hpp>
 
-#include <unistd.h>
 #include <cstdlib>
 #include <cstdio>
 
 #ifdef _WIN32
 #undef interface
+#elif __linux__
+#include <unistd.h>
 #endif
 
 /* To ensure log cleanly ends, fd automatically closed. */
@@ -23,9 +24,15 @@ void QueryStatistics(Renderer* renderer, Statistics& statistics)
 
 int main(/* int argc, char* argv[] */)
 {
+    #if __linux__
     /* Create an error log to stderr. */
     FILE* log = fopen("error.log", "w");
-    dup2(fileno(log), 2);
+    dup2(fileno(log), fileno(stderr));
+    #elif _WIN32
+    /* Note: this'll buffer output. */
+    freopen("error.log", "w", stderr);
+    #endif
+
     atexit(end);
 
     fprintf(stderr, "--- BEGIN LOG ---\n\n");

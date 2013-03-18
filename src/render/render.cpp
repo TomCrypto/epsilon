@@ -3,6 +3,13 @@
 
 #include <cmath>
 
+/* NOTE TO MSVC USERS - replace __attribute ((packed)) with:
+ * 
+ * #pragma pack(push, 1)
+ * ... structure ...
+ * #pragma pack(pop)
+*/
+
 struct __attribute__ ((packed)) cl_buffer
 {
     cl_uint width, height, pass;
@@ -104,7 +111,7 @@ void PixelBuffer::WriteToFile(std::string path)
     file << "SOFTWARE=epsilon " << GetRendererVersion() << std::endl;
     file << "FORMAT=32-bit_rle_xyze" << std::endl << std::endl;
 
-    file << "-Y " << params.width << " +X " << params.height << std::endl;
+    file << "-Y " << params.height << " +X " << params.width << std::endl;
 
     for (size_t t = 0; t < params.width * params.height; ++t)
     {
