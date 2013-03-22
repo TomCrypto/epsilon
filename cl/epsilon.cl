@@ -20,7 +20,7 @@
 **/
 #define MT 10
 
-typedef struct __attribute__ ((packed)) Node
+typedef struct Node
 {
     float4 min, max;
     uint4 data;
@@ -149,7 +149,7 @@ bool Intersect(float3 origin, float3 direction, float* distance, uint *hit,
     return (*hit != -1);
 }
 
-typedef struct __attribute__ ((packed)) Params
+typedef struct Params
 {
     uint width, height, pass;
 } Params;
