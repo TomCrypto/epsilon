@@ -3,14 +3,7 @@
 
 #include <cmath>
 
-/* NOTE TO MSVC USERS - replace __attribute ((packed)) with:
- * 
- * #pragma pack(push, 1)
- * ... structure ...
- * #pragma pack(pop)
-*/
-
-struct __attribute__ ((packed)) cl_buffer
+struct cl_buffer
 {
     cl_uint width, height, pass;
 };
