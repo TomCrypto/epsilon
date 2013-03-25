@@ -171,9 +171,9 @@ constant sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
 **/
 void kernel clmain(   global   float4        *buffer, 
                     constant   Params        *params,
-                   read_only   image1d_t    spectrum, 
-                       global  Triangle   *triangles, 
-                       global  Node           *nodes,
+                   read_only   image2d_t    spectrum, 
+                      global   Triangle   *triangles, 
+                      global   Node           *nodes,
                     constant   uint         *mapping,
                     constant   Camera        *camera,
                     constant   ulong4          *seed)
@@ -346,9 +346,9 @@ void kernel clmain(   global   float4        *buffer,
         if (rand(&prng) > radiance) { radiance = 0.0f; break; }
     }
 
-    /* Convert this spectral sample to a color using the spectral curve. */
-    float3 xyz = radiance * read_imagef(spectrum, sampler, wavelength).xyz;
+    /* Transform this spectral sample to a color using the spectral curve. */
+    float3 xyz = read_imagef(spectrum, sampler, (float2)(wavelength, 0)).xyz;
 
-    /* Accumulate this sample into the buffer. */
-    buffer[get_global_id(0)] += (float4)(xyz, 1);
+    /* Accumulate this spectral sample into pixel buffer. */
+    buffer[get_global_id(0)] += (float4)(xyz * radiance, 1);
 }
