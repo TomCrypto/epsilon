@@ -1,5 +1,9 @@
 #include <interface/interface.hpp>
 
+#include <misc/pugixml.hpp>
+
+#include <fstream>
+
 /* These are constants corresponding to lines on the interface terminal. */
 #define LINE_PLATFORM   3
 #define LINE_DEVICE     5
@@ -158,6 +162,38 @@ void trim(std::string& str)
 bool Interface::GetInput()
 {
     try {
+
+    int defPlatform = -1, defDevice = -1;
+    std::string defScene = "", defOutput = "";
+    size_t defWidth = 0, defHeight = 0, defPasses = 0;
+    
+    try
+    {
+        std::fstream stream;
+        stream.open("epsilon.xml", std::ios::in);
+        if (stream.is_open())
+        {
+        pugi::xml_document doc;
+        if (doc.load(stream))
+        {
+            pugi::xml_node node = doc.child("interface");
+            defPlatform = node.child("OpenCL").attribute("Platform").as_int();
+            defDevice = node.child("OpenCL").attribute("Device").as_int();
+            defScene = node.child("Scenes").attribute("SceneDir").value();
+            defOutput = node.child("Scenes").attribute("OutDir").value();
+            defWidth = node.child("Render").attribute("Width").as_int();
+            defHeight = node.child("Render").attribute("Height").as_int();
+            defPasses = node.child("Render").attribute("Passes").as_int();
+        }
+
+        stream.close();
+        }
+    }
+    catch (std::exception &e)
+    {
+        /* No worries. */
+    }
+
     size_t platformIndex, deviceIndex;
     int key;
 
@@ -168,12 +204,12 @@ bool Interface::GetInput()
     std::vector<cl::Platform> platforms;
     cl::Platform::get(&platforms);
 
-    platformIndex = 0;
+    platformIndex = (defPlatform == -1) ? 0 : defPlatform;
     DisplayStatus("Please select the OpenCL platform (left/right arrow keys).",
                   false);
 
     key = 0;
-    while (key != '\n')
+    while ((key != '\n') && (key != 459)) /* 459 => enter key for PDCurses */
     {
         std::string name;
 
@@ -188,6 +224,9 @@ bool Interface::GetInput()
         mvprintw(LINE_PLATFORM, 66, "#%d out of %d", platformIndex + 1, count);
 
         Redraw();
+
+        if (defPlatform != -1) break;
+
         key = getch();
 
         /* Left key = previous platform, right key = next platform. */
@@ -195,7 +234,7 @@ bool Interface::GetInput()
         if ((key == KEY_RIGHT) && (platformIndex < count - 1)) platformIndex++;
     }
 
-    deviceIndex = 0;
+    deviceIndex = (defDevice == -1) ? 0 : defDevice;
     DisplayStatus("Please select the OpenCL device.", false);
 
     /* Get the list of devices... */
@@ -203,7 +242,7 @@ bool Interface::GetInput()
     platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
 
     key = 0;
-    while (key != '\n')
+    while ((key != '\n') && (key != 459))
     {
         std::string name;
 
@@ -218,6 +257,9 @@ bool Interface::GetInput()
         mvprintw(LINE_DEVICE, 66, "#%d out of %d", deviceIndex + 1, count);
 
         Redraw();
+
+        if (defDevice != -1) break;
+
         key = getch();
 
         if ((key == KEY_LEFT) && (deviceIndex > 0)) deviceIndex--;
@@ -230,8 +272,16 @@ bool Interface::GetInput()
     /* Get scene directory. */
     DisplayStatus("Please enter the scene directory to use.", false);
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-    mvgetnstr(LINE_SCENEFILE, 18, input, 60);
-    source = input;
+    if (defScene == "")
+    {
+        mvgetnstr(LINE_SCENEFILE, 18, input, 60);
+        source = input;
+    }
+    else
+    {
+        mvprintw(LINE_SCENEFILE, 18, defScene.c_str());
+        source = defScene;
+    }
 
     /* Redraw borders (fixes a weird PDCurses bug). */
     DrawBorders();
@@ -239,29 +289,61 @@ bool Interface::GetInput()
     /* Get output file. */
     DisplayStatus("Please enter the output image.", false);
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-    mvgetnstr(LINE_OUTPUTFILE, 18, input, 60);
-    output = input;
+    if (defOutput == "")
+    {
+        mvgetnstr(LINE_OUTPUTFILE, 18, input, 60);
+        output = input;
+    }
+    else
+    {
+        mvprintw(LINE_OUTPUTFILE, 18, defOutput.c_str());
+        output = defOutput;
+    }
 
     DrawBorders();
 
     /* Get render width and height. */
     DisplayStatus("Please enter the render width and height.", false);
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-    mvgetnstr(LINE_WIDTH, 18, input, 6);
-    width = atoi(input);
+    if (defWidth == 0)
+    {
+        mvgetnstr(LINE_WIDTH, 18, input, 6);
+        width = atoi(input);
+    }
+    else
+    {
+        mvprintw(LINE_WIDTH, 18, std::to_string(defWidth).c_str());
+        width = defWidth;
+    }
 
     DrawBorders();
 
-    mvgetnstr(LINE_HEIGHT, 18, input, 6);
-    height = atoi(input);
+    if (defHeight == 0)
+    {
+        mvgetnstr(LINE_HEIGHT, 18, input, 6);
+        height = atoi(input);
+    }
+    else
+    {
+        mvprintw(LINE_HEIGHT, 18, std::to_string(defHeight).c_str());
+        height = defHeight;
+    }
 
     DrawBorders();
 
     /* Get the passes per pixel count. */
     DisplayStatus("Please enter the passes (per pixel) desired.", false);
     attron(COLOR_PAIR(COLOR_NORMAL)); attroff(A_BOLD);
-    mvgetnstr(LINE_PASSES, 18, input, 8);
-    passes = atoi(input);
+    if (defPasses == 0)
+    {
+        mvgetnstr(LINE_PASSES, 18, input, 8);
+        passes = atoi(input);
+    }
+    else
+    {
+        mvprintw(LINE_PASSES, 18, std::to_string(defPasses).c_str());
+        passes = defPasses;
+    }
 
     DrawBorders();
 

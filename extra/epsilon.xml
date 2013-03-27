@@ -1,0 +1,14 @@
+<!-- Put this file in your working directory, and the renderer parameters
+     (which the interface asks you to enter) will be automatically filled
+     in, if they are in this configuration file. This is just a template.
+
+     For instance if you are testing something, you can preset everything
+     except the number of passes to reasonable values, such that you only
+     need to enter the number of passes, every time you render something. -->
+
+<?xml version="1.0"?>
+<interface>
+  <OpenCL Platform="0" Device="0" />
+  <Scenes SceneDir="scenes/empty" OutDir="render.hdr" />
+  <Render Width="400" Height="400" Passes="1000" />
+</interface>
