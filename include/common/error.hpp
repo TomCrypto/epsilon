@@ -42,7 +42,7 @@ namespace Error
     extern const std::string Kernel;
     /** @brief Kernel execution on the selected device did not succeed. **/
     extern const std::string Execute;
-    /** @brief The CLC build log (if build fails) could not be retrieved. **/
+    /** @brief The CLC build log could not be retrieved. **/
     extern const std::string BuildLog;
 
     /** @brief Throws a formatted exception based on an error code.
@@ -56,3 +56,43 @@ namespace Error
     **/
     void Check(std::string msg, int code, bool override = false);
 }
+
+/* The following are exception-enabled wrappers around various functions. */
+#include <misc/pugixml.hpp>
+#include <CL/cl.hpp>
+#include <fstream>
+
+void QueryPlatforms(std::vector<cl::Platform>& platforms);
+void QueryDevices(cl::Platform& platform, std::vector<cl::Device>& devices);
+void PlatformName(cl::Platform& platform, std::string& name);
+void DeviceName(cl::Device& device, std::string& name);
+cl::Context CreateContext(std::vector<cl::Device>& devices);
+cl::CommandQueue CreateQueue(cl::Context& context, cl::Device& device);
+cl::Program CreateProgram(cl::Context& context, cl::Program::Sources& code);
+cl::Kernel CreateKernel(cl::Program& program, const char* name);
+std::string GetBuildLog(cl::Program& program, cl::Device& device);
+size_t GetWorkGroupSize(cl::Kernel& kernel, cl::Device& device);
+void ExecuteKernel(cl::CommandQueue& queue, cl::Kernel& kernel,
+                   cl::NDRange offset, cl::NDRange global, cl::NDRange local);
+void FlushAndWait(cl::CommandQueue& queue);
+
+template <typename T>
+void BindArgument(cl::Kernel& kernel, T& buffer, cl_uint index)
+{
+    Error::Check(Error::Bind, kernel.setArg(index, buffer));   
+}
+
+cl::Buffer CreateBuffer(cl::Context& context, cl_mem_flags flags,
+                        size_t size, void* hostptr = nullptr);
+void WriteToBuffer(cl::CommandQueue& queue, cl::Buffer& buffer, cl_bool block,
+                   size_t offset, size_t size, const void* ptr);
+void ReadFromBuffer(cl::CommandQueue& queue, const cl::Buffer& buffer,
+                    cl_bool block, size_t offset, size_t size,
+                    void* ptr);
+cl::Image2D CreateImage2D(cl::Context& context, cl_mem_flags flags,
+                          cl::ImageFormat format, size_t width, size_t height,
+                          void* hostptr = nullptr);
+void WriteToImage2D(cl::CommandQueue& queue, cl::Image2D& image, cl_bool block,
+                    cl::size_t<3>& origin, cl::size_t<3>& region, void* ptr);
+
+void ParseXML(pugi::xml_document& document, std::fstream& stream);

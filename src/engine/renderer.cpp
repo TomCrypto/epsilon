@@ -18,14 +18,8 @@ Renderer::Renderer(size_t width, size_t height, size_t passes,
     /* For some reason, cl::Context requires a vector.. */
     std::vector<cl::Device> devices(&device, &device + 1);
 
-    cl_int error;
-    params.context = cl::Context(devices, nullptr, nullptr,
-                                          nullptr, &error);
-    Error::Check(Error::Context, error);
-
-    params.queue = cl::CommandQueue(params.context, device,
-                                    /* props. */ 0, &error);
-    Error::Check(Error::Queue, error);
+    params.context = CreateContext(devices);
+    params.queue = CreateQueue(params.context, device);
 
     fprintf(stderr, "Building OpenCL kernel.\n");
 
@@ -35,24 +29,15 @@ Renderer::Renderer(size_t width, size_t height, size_t passes,
     cl::Program::Sources data; /* Don't need multi-kernel support. */
     data = cl::Program::Sources(1, std::make_pair(src, strlen(src)));
 
-    params.program = cl::Program(params.context, data, &error);
-    Error::Check(Error::Program, error);
+    params.program = CreateProgram(params.context, data);
 
-    const char* options = "-cl-std=CL1.1 -I cl/";
-    cl_int build_error = params.program.build(devices, options);
-
-    std::string log;
-    error = params.program.getBuildInfo(params.device, CL_PROGRAM_BUILD_LOG,
-                                        &log);
-    Error::Check(Error::BuildLog, error);
+    params.program.build(devices, "-cl-std=CL1.1 -I cl/");
+    std::string log = GetBuildLog(params.program, params.device);
 
     fprintf(stderr, "CLC build log follows:\n\n");
     fprintf(stderr, "%s\n\n", log.c_str());
 
-    Error::Check(Error::Build, build_error);
-
-    params.kernel = cl::Kernel(params.program, "clmain", &error);
-    Error::Check(Error::Kernel, error);
+    params.kernel = CreateKernel(params.program, "clmain");
 
     fprintf(stderr, "Loading all kernel objects.\n\n");
 
@@ -83,12 +68,8 @@ bool Renderer::Execute()
     if (info) fprintf(stderr, "Executing first pass.\n");
     else if (currentPass == 1) fprintf(stderr, "Executing passes...\n\n");
 
-    cl_int error;
-    size_t local, global = params.width * params.height;
-    error = params.kernel.getWorkGroupInfo(params.device,
-                                           CL_KERNEL_WORK_GROUP_SIZE,
-                                           &local);
-    Error::Check(Error::DeviceQuery, error);
+    size_t local = GetWorkGroupSize(params.kernel, params.device);
+    size_t global = params.width * params.height;
     size_t offset = 0;
 
     if (info)
@@ -114,11 +95,8 @@ bool Renderer::Execute()
             cl::NDRange offsetRange(offset);
 
             if (info) fprintf(stderr, "-----> Launching kernel.\n");
-            error = params.queue.enqueueNDRangeKernel(params.kernel,
-                                                      offsetRange,
-                                                      globalSize,
-                                                      localSize);
-            Error::Check(Error::Execute, error);
+            ExecuteKernel(params.queue, params.kernel, offsetRange,
+                          globalSize, localSize);
         }
 
         global = global % local;
@@ -126,8 +104,7 @@ bool Renderer::Execute()
         local /= 2;
     }
 
-    Error::Check(Error::Execute, params.queue.flush());
-    Error::Check(Error::Execute, params.queue.finish());
+    FlushAndWait(params.queue);
 
     if (info) fprintf(stderr, "--> Updating all kernel objects.\n");
     for (size_t t = 0; t < objects.size(); ++t)

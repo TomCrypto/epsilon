@@ -14,12 +14,8 @@ PixelBuffer::PixelBuffer(EngineParams& params) : KernelObject(params)
 
     cl_buffer data = { (cl_uint)params.width, (cl_uint)params.height };
     
-    fprintf(stderr, "Reported ..");
-
-    cl_int error;
-    rp = cl::Buffer(params.context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                    sizeof(cl_buffer), &data, &error);
-    Error::Check(Error::Memory, error);
+    rp = CreateBuffer(params.context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                      sizeof(cl_buffer), &data);
 
     size_t floatCount = params.width * params.height * 4;
 
@@ -27,9 +23,8 @@ PixelBuffer::PixelBuffer(EngineParams& params) : KernelObject(params)
 
     for (size_t t = 0; t < floatCount; ++t) pixels[t] = 0.0f;
 
-    pb = cl::Buffer(params.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
-                    floatCount * sizeof(float), pixels, &error);
-    Error::Check(Error::Memory, error);
+    pb = CreateBuffer(params.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
+                      floatCount * sizeof(float), pixels);
 
     fprintf(stderr, "Initialization complete.\n\n");
 }
@@ -55,17 +50,15 @@ void* PixelBuffer::Query(size_t /* query */)
 void PixelBuffer::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <pb@PixelBuffer> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg((*index)++, pb));
+    BindArgument(params.kernel, pb, (*index)++);
     fprintf(stderr, "Binding >rp@PixelBuffer> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg((*index)++, rp));
+    BindArgument(params.kernel, rp, (*index)++);
 }
 
-void PixelBuffer::Acquire(const EngineParams& params)
+void PixelBuffer::Acquire(EngineParams& params)
 {
-    cl_int error;
     size_t bufSize = params.width * params.height * sizeof(float) * 4;
-    error = params.queue.enqueueReadBuffer(pb, CL_TRUE, 0, bufSize, pixels);
-    Error::Check(Error::CLIO, error);
+    ReadFromBuffer(params.queue, pb, CL_TRUE, 0, bufSize, pixels);
 }
 
 void PixelBuffer::WriteToFile(std::string path)
@@ -127,11 +120,9 @@ Tristimulus::Tristimulus(EngineParams& params) : KernelObject(params)
     fprintf(stderr, "Initializing <Tristimulus>.\n");
     fprintf(stderr, "Spectral resolution: %.1fnm.\n", 400.0 / (res - 1));
 
-    cl_int error;
     cl::ImageFormat format(CL_RGBA, CL_FLOAT);
-    this->buffer = cl::Image2D(params.context, CL_MEM_READ_ONLY, format,
-                               res, 1, 0, nullptr, &error);
-    Error::Check(Error::Memory, error);
+    this->buffer = CreateImage2D(params.context, CL_MEM_READ_ONLY, format,
+                                 res, 1);
 
     cl::size_t<3> origin;
     origin[0] = 0;
@@ -143,16 +134,15 @@ Tristimulus::Tristimulus(EngineParams& params) : KernelObject(params)
     region[1] = 1;
     region[2] = 1;
 
-    error = params.queue.enqueueWriteImage(this->buffer, CL_TRUE, origin,
-                                           region, 0, 0, Spectral::Curve());
-    Error::Check(Error::CLIO, error);
+    WriteToImage2D(params.queue, this->buffer, CL_TRUE, origin, region,
+                   Spectral::Curve());
     fprintf(stderr, "Initialization complete.\n\n");
 }
 
 void Tristimulus::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <buffer@Tristimulus> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg((*index)++, buffer));
+    BindArgument(params.kernel, buffer, (*index)++);
 }
 
 void Tristimulus::Update(size_t /* index */)

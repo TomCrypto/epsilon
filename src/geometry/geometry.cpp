@@ -307,7 +307,7 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
     GetData("geometry.xml", stream);
     fprintf(stderr, "Parsing scene geometry...");
 
-    if (!doc.load(stream)) Error::Check(Error::IO, 0, true);
+    ParseXML(doc, stream);
     fprintf(stderr, " done.\n");
 
     pugi::xml_node node = doc.child("geometry");
@@ -342,6 +342,7 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
         }
         catch (std::exception &e)
         {
+            /* Something went wrong. */
             Error::Check(Error::IO, 0, true);
         }
     }
@@ -357,8 +358,6 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
         triangleList[t]->material = std::distance(modelList.begin(),
                                                   modelList.find(m)) + 1;
     }
-
-    cl_int error;
 
     fprintf(stderr, "\nTotal %u triangles.\n", count);
     fprintf(stderr, "Now building BVH.\n");
@@ -385,11 +384,10 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 
         fprintf(stderr, "BVH compacted, uploading to device...\n");
 
-        this->nodes = cl::Buffer(params.context,
-                                 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                                 sizeof(cl_node) * nodeCount, rawNodes.get(),
-                                 &error);
-        Error::Check(Error::Memory, error);
+        this->nodes = CreateBuffer(params.context,
+                                   CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                                   sizeof(cl_node) * nodeCount,
+                                   rawNodes.get());
 
         fprintf(stderr, "BVH uploaded! Freeing resources.\n");
     }
@@ -403,11 +401,10 @@ Geometry::Geometry(EngineParams& params) : KernelObject(params)
 
     fprintf(stderr, "Triangles compacted, uploading to device...\n");
 
-    this->triangles = cl::Buffer(params.context,
-                                 CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                                 sizeof(cl_triangle) * count,
-                                 raw, &error);
-    Error::Check(Error::Memory, error);
+    this->triangles = CreateBuffer(params.context,
+                                   CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                                   sizeof(cl_triangle) * count,
+                                   raw);
 
     fprintf(stderr, "Triangle data uploaded! Freeing resources.\n");
     for (size_t t = 0; t < count; ++t) delete triangleList[t];
@@ -425,9 +422,9 @@ Geometry::~Geometry()
 void Geometry::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <triangles@Geometry> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg((*index)++, triangles));
+    BindArgument(params.kernel, triangles, (*index)++);
     fprintf(stderr, "Binding <nodes@Geometry> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg((*index)++, nodes));
+    BindArgument(params.kernel, nodes, (*index)++);
 }
 
 void Geometry::Update(size_t /* index */) { return; }

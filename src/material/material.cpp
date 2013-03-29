@@ -15,7 +15,7 @@ Materials::Materials(EngineParams& params) : KernelObject(params)
     GetData("materials.xml", stream);
     fprintf(stderr, "Parsing materials...");
 
-    if (!doc.load(stream)) Error::Check(Error::IO, 0, true);
+    ParseXML(doc, stream);
     fprintf(stderr, " done.\n");
 
     std::set<std::string> modelList;
@@ -45,12 +45,10 @@ Materials::Materials(EngineParams& params) : KernelObject(params)
         matMapping[index++] = node.attribute("MatID").as_uint();
     }
 
-    cl_int error;
-    mapping = cl::Buffer(params.context,
-                         CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                         sizeof(cl_uint) * matMapping.size(),
-                         &matMapping[0], &error);
-    Error::Check(Error::Memory, error);
+    mapping = CreateBuffer(params.context,
+                           CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                           sizeof(cl_uint) * matMapping.size(),
+                           &matMapping[0]);
 
     fprintf(stderr, "Initialization complete.\n\n");
 }
@@ -58,7 +56,7 @@ Materials::Materials(EngineParams& params) : KernelObject(params)
 void Materials::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <mapping@Materials> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg((*index)++, mapping));
+    BindArgument(params.kernel, mapping, (*index)++);
 }
 
 void Materials::Update(size_t /* index */)

@@ -7,10 +7,8 @@ PRNG::PRNG(EngineParams& params) : KernelObject(params)
 {
     fprintf(stderr, "Initializing <PRNG>...");
 
-    cl_int error;
-    this->buffer = cl::Buffer(params.context, CL_MEM_READ_ONLY,
-                              sizeof(cl_prng), nullptr, &error);
-    Error::Check(Error::Memory, error);
+    this->buffer = CreateBuffer(params.context, CL_MEM_READ_ONLY,
+                                sizeof(cl_prng), nullptr);
 
     this->seed = 0;
 
@@ -20,15 +18,13 @@ PRNG::PRNG(EngineParams& params) : KernelObject(params)
 void PRNG::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <buffer@PRNG> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg((*index)++, buffer));
+    BindArgument(params.kernel, buffer, (*index)++);
 }
 
 void PRNG::Update(size_t /* index */)
 {
-    cl_int error = params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
-                                                   sizeof(uint64_t),
-                                                   &this->seed);
-    Error::Check(Error::CLIO, error);
+    WriteToBuffer(params.queue, this->buffer, CL_TRUE,
+                  0, sizeof(uint64_t), &this->seed);
     this->seed++;
 }
 

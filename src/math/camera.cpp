@@ -23,7 +23,7 @@ Camera::Camera(EngineParams& params) : KernelObject(params)
     GetData("camera.xml", stream);
     fprintf(stderr, "Parsing camera parameters...");
 
-    if (!doc.load(stream)) Error::Check(Error::IO, 0, true);
+    ParseXML(doc, stream);
     fprintf(stderr, " done.\n");
 
     pugi::xml_node node = doc.child("camera");
@@ -68,10 +68,8 @@ Camera::Camera(EngineParams& params) : KernelObject(params)
         focalPlane[t] = focalPlane[t] * focalLength + cameraPos;
     }
 
-    cl_int error;
-    this->buffer = cl::Buffer(params.context, CL_MEM_READ_ONLY,
-                              sizeof(cl_data), nullptr, &error);
-    Error::Check(Error::Memory, error);
+    this->buffer = CreateBuffer(params.context, CL_MEM_READ_ONLY,
+                                sizeof(cl_data), nullptr);
 
     cl_data data;
     for (size_t t = 0; t < 4; ++t) focalPlane[t].CL(&data.p[t]);
@@ -80,9 +78,8 @@ Camera::Camera(EngineParams& params) : KernelObject(params)
     tangent.CL(&data.left);
     data.spread = focalSpread;
 
-    error = params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
-                                            sizeof(cl_data), &data);
-    Error::Check(Error::CLIO, error);
+    WriteToBuffer(params.queue, this->buffer, CL_TRUE,
+                  0, sizeof(cl_data), &data);
 
     fprintf(stderr, "Initialization complete.\n\n");
     stream.close();
@@ -91,7 +88,7 @@ Camera::Camera(EngineParams& params) : KernelObject(params)
 void Camera::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <buffer@Camera> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg((*index)++, buffer));
+    BindArgument(params.kernel, buffer, (*index)++);
 }
 
 void Camera::Update(size_t /* index */) { return; }

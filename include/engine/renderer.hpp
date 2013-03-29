@@ -14,8 +14,7 @@
   *
   * This file contains the renderer.
   *
-  * \todo Improve error checking code by creating helper functions for
-  *       creating resources, rather than rewriting Error::Check everywhere.
+  * \todo Clean up exception-safe wrappers (error.hpp, error.cpp).
   * \todo When all of the above works perfectly, implement material system &
   *       optimize/document the kernel code.
   * \todo Clean up kernel code.

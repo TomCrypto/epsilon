@@ -28,8 +28,7 @@ class PixelBuffer : public KernelObject
         cl::Buffer pb;
         float *pixels;
 
-        void Acquire(const EngineParams& params);
-        void Upload(const EngineParams& params);
+        void Acquire(EngineParams& params);
 
         void WriteToFile(std::string path);
     public:
