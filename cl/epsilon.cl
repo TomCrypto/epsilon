@@ -151,7 +151,7 @@ bool Intersect(float3 origin, float3 direction, float* distance, uint *hit,
 
 typedef struct Params
 {
-    uint width, height, pass;
+    uint width, height;
 } Params;
 
 /* Image sampler, using texel linear interpolation. */
@@ -161,7 +161,7 @@ constant sampler_t sampler = CLK_NORMALIZED_COORDS_TRUE |
 
 /** This is the main kernel, which performs the entire ray tracing step.
   * @param buffer The pixel buffer, as a flat 2D array.
-  * @param params The render parameters (render width, height, pass count).
+  * @param params The render parameters (render width and height).
   * @param spectrum The tristimulus curve, to map wavelengths to colors.
   * @param triangles The list of triangles in the scene.
   * @param nodes The tree datastructure, as a list of nodes.

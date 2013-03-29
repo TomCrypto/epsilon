@@ -11,28 +11,6 @@
   * general.
 **/
 
-/** @class DeviceParams
-  * @brief Device-side engine params.
-  *
-  * This kernel object uploads relevant engine parameters to the kernel, this
-  * includes render width and height. This is required for the kernel to work.
-  *
-  * This kernel object handles no queries.
-**/
-class DeviceParams : public KernelObject
-{
-    private:
-        cl::Buffer buffer;
-
-    public:
-        DeviceParams(EngineParams& params);
-        ~DeviceParams() { }
-
-        void Bind(cl_uint* index);
-        void Update(size_t index);
-        void* Query(size_t query);
-};
-
 /** @class PixelBuffer
   * @brief Device-side pixel buffer.
   *
@@ -46,6 +24,7 @@ class DeviceParams : public KernelObject
 class PixelBuffer : public KernelObject
 {
     private:
+        cl::Buffer rp;
         cl::Buffer pb;
         float *pixels;
 

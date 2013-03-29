@@ -5,48 +5,21 @@
 
 struct cl_buffer
 {
-    cl_uint width, height, pass;
+    cl_uint width, height;
 };
-
-DeviceParams::DeviceParams(EngineParams& params) : KernelObject(params)
-{
-    fprintf(stderr, "Initializing <DeviceParams>...");
-    cl_buffer data = { (cl_uint)params.width, (cl_uint)params.height, 0 };
-
-    cl_int error;
-    this->buffer = cl::Buffer(params.context,
-                              CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                              sizeof(cl_buffer), &data, &error);
-    Error::Check(Error::Memory, error);
-    fprintf(stderr, " complete.\n\n");
-}
-
-void DeviceParams::Bind(cl_uint* index)
-{
-    fprintf(stderr, "Binding <buffer@DeviceParams> to index %u.\n", *index);
-    Error::Check(Error::Bind, params.kernel.setArg((*index)++, buffer));
-}
-
-void DeviceParams::Update(size_t index)
-{
-    cl_uint pass = (cl_uint)index;
-    cl_buffer x = { (cl_uint)params.width, (cl_uint)params.height, pass };
-    params.queue.enqueueWriteBuffer(this->buffer, CL_TRUE, 0,
-                                    sizeof(cl_buffer), &x);
-
-    return;
-}
-
-void* DeviceParams::Query(size_t /* query */)
-{
-    return nullptr;
-}
-
-/******************************************************************************/
 
 PixelBuffer::PixelBuffer(EngineParams& params) : KernelObject(params)
 {
     fprintf(stderr, "Initializing <PixelBuffer>...\n");
+
+    cl_buffer data = { (cl_uint)params.width, (cl_uint)params.height };
+    
+    fprintf(stderr, "Reported ..");
+
+    cl_int error;
+    rp = cl::Buffer(params.context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                    sizeof(cl_buffer), &data, &error);
+    Error::Check(Error::Memory, error);
 
     size_t floatCount = params.width * params.height * 4;
 
@@ -54,7 +27,6 @@ PixelBuffer::PixelBuffer(EngineParams& params) : KernelObject(params)
 
     for (size_t t = 0; t < floatCount; ++t) pixels[t] = 0.0f;
 
-    cl_int error;
     pb = cl::Buffer(params.context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR,
                     floatCount * sizeof(float), pixels, &error);
     Error::Check(Error::Memory, error);
@@ -84,6 +56,8 @@ void PixelBuffer::Bind(cl_uint* index)
 {
     fprintf(stderr, "Binding <pb@PixelBuffer> to index %u.\n", *index);
     Error::Check(Error::Bind, params.kernel.setArg((*index)++, pb));
+    fprintf(stderr, "Binding >rp@PixelBuffer> to index %u.\n", *index);
+    Error::Check(Error::Bind, params.kernel.setArg((*index)++, rp));
 }
 
 void PixelBuffer::Acquire(const EngineParams& params)

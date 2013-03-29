@@ -14,8 +14,8 @@
   *
   * This file contains the renderer.
   *
-  * \todo Clean up pixel buffer code (Pixel object, combine PixelBuffer &
-  *       DeviceParams, etc..)
+  * \todo Improve error checking code by creating helper functions for
+  *       creating resources, rather than rewriting Error::Check everywhere.
   * \todo When all of the above works perfectly, implement material system &
   *       optimize/document the kernel code.
   * \todo Clean up kernel code.
@@ -27,7 +27,6 @@
 
 /** @class Renderer
   * @brief Engine implementation.
-  *
   *
 **/
 class Renderer
