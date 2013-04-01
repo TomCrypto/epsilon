@@ -64,7 +64,6 @@ void NoAccel_Trace(float u, float v, float3 *origin, float3 *direction)
   *          distance.
   * @param hit A pointer to a \c uint in which to store the nearest sphere
   *            intersected.
-  * @param spheres A list of spheres to check intersection against.
   * @returns A boolean indicating whether the ray intersects a sphere or not.
   *          If this function returns \c false, the values of \c *t and \c *hit
   *          are indeterminate and should not be used.
