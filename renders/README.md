@@ -50,3 +50,15 @@ can see, the results are interesting. Note the caustic on the ceiling.
 </p>
 This demonstrates the new HDR output feature - each of the three renders uses a
 different tonemapping method, computed in an external program.
+
+<p align="center">
+<img src="https://raw.github.com/TomCrypto/epsilon/master/renders/highperf_noaccel.png" alt="NoAccel rendering mode"/>
+</p>
+This render was produced using the "noaccel" high-performance render mode which
+ignores user geometry & camera settings, disables BVH acceleration, and reverts
+to rendering a scene made out of spheres (smallpt-like). This is useful because
+it improves performance considerably, for testing materials when large geometry
+is not needed. The camera is also reimplemented with only the basic features, a
+necessity since it would be stupid to hardcode the sphere scene, but not camera
+position and target (though work is still being made). This render was produced
+using my GPU, happily working at over 15 million pixel passes per second.

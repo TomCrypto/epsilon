@@ -8,11 +8,25 @@
 **/
 
 /** This is the ray-triangle epsilon value, used in intersection tests. **/
-#define EPSILON 1e-5f
+#ifdef KERNEL_MODE_NOACCEL
+#define EPSILON (1e-3f)
+#else
+#define EPSILON (1e-5f)
+#endif
 
 /** This is the pushback epsilon value, used to handle transmission/reflection,
   * It must be lower than \c EPSILON or artifacts will appear. **/
-#define PSHBK 1e-4f
+#ifdef KERNEL_MODE_NOACCEL
+#define PSHBK (5 * 1e-2f)
+#else
+#define PSHBK (1e-4f)
+#endif
+
+/** This is a vector delta used for reliably computing an isotropic basis. **/
+#define VDELTA (float3)(1, 1, 1)
+
+/** This is the PI constant, ratio of a circle's circumference to radius. **/
+#define PI 3.14159265f
 
 /** Computes the amplitude reflection coefficient for s-polarized light.
   * @param n1 The incoming medium's refractive index.

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <util.cl>
+#include <prng.cl>
 
 /** @file camera.cl
   * @brief Kernel camera implementation.
@@ -37,8 +38,8 @@ void Trace(float u, float v, float3 *origin, float3 *direction,
 {
     *origin = camera->pos.xyz;
 
-    *origin += (camera->up.xyz   * cos(x * 2 * 3.14159265f)
-             +  camera->left.xyz * sin(x * 2 * 3.14159265f))
+    *origin += (camera->up.xyz   * cos(x * 2 * PI)
+             +  camera->left.xyz * sin(x * 2 * PI))
              * sqrt(y) * camera->spread;
 
     *direction = lerp(lerp(camera->p[0].xyz, camera->p[1].xyz, u),

@@ -39,6 +39,9 @@
 /** @brief Absorbing red glass material. **/
 #define GLASS_RED 0x00000006
 
+/** @brief Absorbing red glass material (weaker). **/
+#define GLASS_RED_WEAK 0x00000007
+
 /** This function returns the material's exitant spectral radiance, this is the
   * lighting term, if the material is not a light source this must be negative,
   * or zero, otherwise the material will be considered as emissive.
@@ -74,7 +77,8 @@ float absorption(uint matID, float wavelength)
      * absorption properties, you are free to not implement this function.   */ 
     switch (matID)
     {
-        case GLASS_RED: return glass_abs(wavelength);
+        case GLASS_RED: return glass_abs(wavelength, 1.2f);
+        case GLASS_RED_WEAK: return glass_abs(wavelength, 0.08f);
 
         default: return 1e-6f;
     }
@@ -94,6 +98,7 @@ float index(uint matID, float wavelength)
     {
         case VACUUM: return 1.0f;
         case GLASS_RED: return 1.55f;
+        case GLASS_RED_WEAK: return 1.55f;
 
         default: return -1.0f;
     }
@@ -149,6 +154,13 @@ float4 reflect(uint in, uint to, float w, float3 incident, PRNG *prng,
         case DIFFUSE_BLUE: return matte_peak(w, prng, 460, 0.001f, 0.55f);
         case DIFFUSE_GREEN: return matte_peak(w, prng, 525, 0.01f, 0.55f);
         case GLASS_RED:
+        {
+            float n1 = index(in, w);
+            float n2 = index(to, w);
+
+            return glass(prng, incident, n1, n2, 0.9f);
+        }
+        case GLASS_RED_WEAK:
         {
             float n1 = index(in, w);
             float n2 = index(to, w);

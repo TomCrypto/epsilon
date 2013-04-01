@@ -1,153 +1,30 @@
 #pragma once
 
+/* UNCOMMENT THIS FOR NOACCEL MODE, this mode discards all scene information, *
+ * including geometry data, BVH nodes, and camera parameters, then falls back *
+ * to a user-defined scene in noaccel.cl, by using spheres. Tree acceleration *
+ * is also disabled. This is useful for testing which doesn't require complex *
+ * geometry, giving some extra performance by eliminating traversal overhead. */
+#define KERNEL_MODE_NOACCEL
+
+#ifdef KERNEL_MODE_NOACCEL
+#include <noaccel.cl>
+#endif
+
 #include <material.cl>
-#include <triangle.cl>
 #include <camera.cl>
 #include <prng.cl>
 #include <util.cl>
+#include <bvh.cl>
 
 /** @file epsilon.cl
   * @brief Rendering kernel.
 **/
 
-/** This is a vector delta used for reliably computing the phase basis for
-  * scattering, any nonzero vector will do since scattering is isotropic.
-**/
-#define VDELTA (float3)(1, 1, 1)
-
 /** Maximum number of nested materials, setting this value too high will cause 
   * register pressure and will slow down the rendering.
 **/
-#define MT 10
-
-typedef struct Node
-{
-    float4 min, max;
-    uint4 data;
-} Node;
-
-/** Computes the intersection between a ray and a bounding box.
-  * @param origin The ray's origin.
-  * @param direction The ray's direction, as a unit vector.
-  * @param bmin The bounding box's minimum coordinate.
-  * @param bmax The bounding box's maximum coordinate.
-  * @param near A pointer to the near intersection distance.
-  * @param far A pointer to the far intersection distance.
-  * @returns Whether an intersection occurs between the ray and the bounding
-  *          box. If this is \c true, the values of \c *near and \c *far 
-  *          indicate the distance to intersection. If this is \c false,
-  *          the values of \c *near and \c *far are indeterminate.
-**/
-bool RayBBox(float3 origin, float3 direction,
-             float3 bmin, float3 bmax,
-             float* near, float* far)
-{
-    float3 bot = (bmin - origin) / direction;
-    float3 top = (bmax - origin) / direction;
-
-    float3 tmin = fmin(top, bot);
-    float3 tmax = fmax(top, bot);
-
-    *near = fmax(fmax(tmin.x, tmin.y), tmin.z);
-    *far  = fmin(fmin(tmax.x, tmax.y), tmax.z);
-
-    return !(*near > *far) && *far > 0;
-}
-
-//! Node for storing state information during traversal.
-typedef struct BVHTraversal {
- uint i; // Node
- float mint; // Minimum hit time for this node.
-} BVHTraversal;
-
-BVHTraversal MakeTraversal(int i, float mint)
-{
-    BVHTraversal ret;
-    ret.i = i;
-    ret.mint = mint;
-    return ret;
-}
-
-bool Intersect(float3 origin, float3 direction, float* distance, uint *hit,
-               global Triangle* triangles, global Node* nodes)
-{
-    *distance = INFINITY;
-    *hit = -1;
-
-    float bbhits[4];
-    int closer, other;
-
-    BVHTraversal todo[24];
-    int stackptr = 0;
-
-    todo[stackptr].i = 0;
-    todo[stackptr].mint = -INFINITY;
-
-    while (stackptr >= 0)
-    {
-        int ni = todo[stackptr].i;
-        float near = todo[stackptr].mint;
-        stackptr--;
-
-        Node node = nodes[ni];
-
-        if(near > *distance) continue;
-
-        if (node.data.z == 0)
-        {
-            for (int o = 0; o < node.data.y; ++o)
-            {
-                float dist;
-                Triangle tri = triangles[node.data.x + o];
-                bool intersects = RayTriangle(origin, direction, tri, &dist);
-                if (intersects && (dist < *distance))
-                {
-                    *distance = dist;
-                    *hit = node.data.x + o; // wtf
-                }
-            }
-        }
-        else
-        {
-            bool hitc0 = RayBBox(origin, direction, nodes[ni + 1].min.xyz, nodes[ni + 1].max.xyz, bbhits, bbhits + 1);
-            bool hitc1 = RayBBox(origin, direction, nodes[ni + node.data.z].min.xyz, nodes[ni + node.data.z].max.xyz, bbhits + 2, bbhits + 3);
-
-            if (hitc0 && hitc1)
-            {
-                closer = ni + 1;
-                other = ni + node.data.z;
-
-                if (bbhits[2] < bbhits[0])
-                {
-                    float tmp = bbhits[0];
-                    bbhits[0] = bbhits[2];
-                    bbhits[2] = tmp;
-
-                    tmp = bbhits[1];
-                    bbhits[1] = bbhits[3];
-                    bbhits[3] = tmp;
-
-                    int tmp2 = closer;
-                    closer = other;
-                    other = tmp2;
-                }
-
-                todo[++stackptr] = MakeTraversal(other, bbhits[2]);
-                todo[++stackptr] = MakeTraversal(closer, bbhits[0]);
-            }
-            else if (hitc0)
-            {
-                todo[++stackptr] = MakeTraversal(ni + 1, bbhits[0]);
-            }
-            else if (hitc1)
-            {
-                todo[++stackptr] = MakeTraversal(ni + node.data.z, bbhits[2]);
-            }
-        }
-    }
-
-    return (*hit != -1);
-}
+#define MT 4
 
 typedef struct Params
 {
@@ -197,15 +74,25 @@ void kernel clmain(   global   float4        *buffer,
     /* The ray as vectors. */
     float3 origin, direction;
 
+    #ifdef KERNEL_MODE_NOACCEL
+    /* Trace camera ray with sphere scene. */
+    NoAccel_Trace(x, y, &origin, &direction);
+    #else
     /* Compute the camera ray from the normalized pixel coordinates. */
     Trace(x, y, &origin, &direction, rand(&prng), rand(&prng), camera);
+    #endif
 
     /* Media stack. */
     uint matStack[MT];
     uint matPos = 0;
 
+    #ifdef KERNEL_MODE_NOACCEL
+    /* Use the scene's atmosphere. */
+    matStack[0] = NOACCEL_ATMOSPHERE;
+    #else
     /* Atmospheric medium. */
     matStack[0] = mapping[0];
+    #endif
 
     /* Select random wavelength. */
     float wavelength = rand(&prng);
@@ -217,22 +104,32 @@ void kernel clmain(   global   float4        *buffer,
     float radiance = 0.0f;
     while (true)
     {
-        /* Triangle/far point. */
-        uint hit = -1; float t_d;
+        /* Object hit and far point. */
+        uint hit = (uint)-1; float t_d;
 
+        #ifdef KERNEL_MODE_NOACCEL
+        /* Intersect the ray against the test sphere scene. */
+        if (!NoAccel_Intersect(origin, direction, &t_d, &hit))
+        #else
         /* Intersect the ray against the entire scene using the tree. */
         if (!Intersect(origin, direction, &t_d, &hit, triangles, nodes))
+        #endif
         {
             /* Escaped ray - implement sky system here later. */
             radiance = 0.0f;
             break;
         }
 
+        #ifdef KERNEL_MODE_NOACCEL
+        /* Get the intersected sphere material. */
+        uint mappingMatID = spheres[hit].material;
+        #else
         /* Get the intersected triangle. */
         Triangle triangle = triangles[hit];
 
         /* Obtain the triangle's correct matID. */
         uint mappingMatID = mapping[triangle.mat];
+        #endif
 
         /* Calculate medium absorption coefficient. */
         float ke = absorption(matStack[matPos], w_nm);
@@ -251,15 +148,16 @@ void kernel clmain(   global   float4        *buffer,
             float3 v_b = normalize(cross(direction, v_t));
             float3 v_n = direction;
 
-            /* Rotate ray, to unit space. */
-            direction = direction.x * (-v_b)
-                      + direction.y * (-v_n)
-                      + direction.z * (-v_t);
-
-            /* Construct an inverse TBN matrix here. */
+            /* Compute the inverse phase basis here. */
             float3 w_b = (float3)(v_b.x, v_n.x, v_t.x);
             float3 w_n = (float3)(v_b.y, v_n.y, v_t.y);
             float3 w_t = (float3)(v_b.z, v_n.z, v_t.z);
+
+            /* Rotate into unit space. */
+            direction = direction.x * w_b
+                      + direction.y * w_n
+                      + direction.z * w_t;
+
 
             /* Scatter the ray by using this material's properties. */
             float4 scattered = scatter(matStack[matPos], w_nm, &prng);
@@ -276,10 +174,17 @@ void kernel clmain(   global   float4        *buffer,
             /* Move ray to intersection pt. */
             origin = origin + t_d * direction;
 
+            #ifdef KERNEL_MODE_NOACCEL
+            /* Get the sphere normal, at the intersection. */
+            float3 v_n = ComputeNormal(origin, spheres[hit]);
+            float3 v_t = normalize(cross(v_n, v_n + VDELTA));
+            float3 v_b = normalize(cross(v_n, v_t));
+            #else
             /* Obtain TBN matrix. */
             float3 v_t = triangle.t;
             float3 v_b = triangle.b;
             float3 v_n = triangle.n;
+            #endif
 
             /* Flip the normal, with the bitangent, if necessary. */
             if (dot(v_n, direction) > 0) { v_n = -v_n; v_b = -v_b; }
@@ -310,9 +215,8 @@ void kernel clmain(   global   float4        *buffer,
                 nested = false;
             }
 
-            /* Reflect this ray, by using the reflectance function.. */
-            float4 reflected = reflect(in, to, w_nm, direction, &prng,
-                                       nested);
+            /* Reflect this ray, using this material's reflectance function. */
+            float4 reflected = reflect(in, to, w_nm, direction, &prng, nested);
             direction = reflected.xyz;
             radiance  = reflected.w;
 

@@ -1,9 +1,9 @@
 #include <util.cl>
 
-float glass_abs(float wavelength)
+float glass_abs(float wavelength, float strength)
 {
     float w = wavelength * 1e9f;
-    return 1e-5f + 1.2f * (1 - exp(-pow(w - 650, 2) * 0.001f));
+    return 1e-5f + strength * (1 - exp(-pow(w - 650, 2) * 0.001f));
 }
 
 /* Smooth glass material. */
