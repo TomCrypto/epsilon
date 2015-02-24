@@ -1,6 +1,12 @@
 εpsilon - Physically Based Spectral Renderer
 ============================================
 
+<p align="center">
+<img
+src="https://raw.github.com/TomCrypto/epsilon/master/renders/absorption.png"
+alt="Showcase Rendering"/>
+</p>
+
 This is a small, and self-contained, raytracing renderer I'm working on. It was
 never designed to rival with existing high-profile renderers, as I developed it
 mostly for fun and as an exercise in software design, though I am releasing it,
@@ -8,7 +14,7 @@ in the hope that someone will find it of some value.
 
 The εpsilon renderer is coded in C++11, and is powered by OpenCL.
 
-Work is currently being put into the following:
+Work is currently (not very much these days) being put into the following:
 
 - Material system
 

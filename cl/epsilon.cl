@@ -5,7 +5,7 @@
  * to a user-defined scene in noaccel.cl, by using spheres. Tree acceleration *
  * is also disabled. This is useful for testing which doesn't require complex *
  * geometry, giving some extra performance by eliminating traversal overhead. */
-#define KERNEL_MODE_NOACCEL
+//#define KERNEL_MODE_NOACCEL
 
 #ifdef KERNEL_MODE_NOACCEL
 #include <noaccel.cl>
